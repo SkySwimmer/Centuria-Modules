@@ -1,0 +1,31 @@
+package org.asf.emuferal.peertopeer.packets;
+
+public enum P2PNexusPacketType {
+
+	PLAYER_CREATE,
+	
+	PLAYER_REMOVE,
+	
+	PLAYER_SANCUPDATE,
+	
+	PLAYER_OBJECTCREATE,
+	
+	PLAYER_OBJECTREMOVE,
+	
+	PLAYER_SYNC,
+	
+	PLAYER_UPDATEAVATAR,
+	
+	REQUEST_PLAYERS,
+	
+	CHAT,
+	
+	INVENTORY_ITEM_REQUEST,
+	
+	INVENTORY_ITEM_RESPONSE,
+	
+	ROOM_JOIN,
+	
+	LEVEL_UPDATE
+	
+}

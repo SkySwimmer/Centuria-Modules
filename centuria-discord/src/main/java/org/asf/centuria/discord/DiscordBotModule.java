@@ -7,7 +7,6 @@ import java.util.Scanner;
 
 import org.asf.centuria.Centuria;
 import org.asf.centuria.discord.handlers.api.ForgotPasswordHandler;
-import org.asf.centuria.discord.handlers.discord.BanHandler;
 import org.asf.centuria.discord.handlers.discord.CommandHandler;
 import org.asf.centuria.discord.handlers.discord.InteractionButtonHandler;
 import org.asf.centuria.discord.handlers.discord.InteractionModalHandler;
@@ -29,7 +28,6 @@ import com.google.gson.JsonParser;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
-import discord4j.core.event.domain.guild.BanEvent;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
 import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
@@ -177,11 +175,6 @@ public class DiscordBotModule implements ICenturiaModule {
 						// Form handler
 						ev = ev.then().and(gateway.on(ModalSubmitInteractionEvent.class, event -> {
 							return InteractionModalHandler.handle(event, gateway);
-						}));
-
-						// Ban handler
-						ev = ev.then().and(gateway.on(BanEvent.class, event -> {
-							return BanHandler.handle(event, gateway);
 						}));
 
 						// Slash command handler

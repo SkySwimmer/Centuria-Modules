@@ -221,6 +221,8 @@ public class GcsForFeralModule implements ICenturiaModule {
 
 	// Checks if a conversation is a GC
 	private boolean isGCConvo(String convoId, CenturiaAccount acc) {
+		if (!acc.getSaveSharedInventory().containsItem("gcs"))
+			return false;
 		boolean found = false;
 		ArrayList<JsonElement> toRemove = new ArrayList<JsonElement>();
 		JsonArray arr = acc.getSaveSharedInventory().getItem("gcs").getAsJsonArray();

@@ -405,9 +405,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 							return;
 						}
 						CenturiaAccount acc = AccountManager.getInstance().getAccount(id);
-						if (acc == null
-								|| !Stream.of(DMManager.getInstance().getDMParticipants(event.getConversationId()))
-										.anyMatch(t -> t.equals(id))) {
+						if (acc == null) {
 							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();

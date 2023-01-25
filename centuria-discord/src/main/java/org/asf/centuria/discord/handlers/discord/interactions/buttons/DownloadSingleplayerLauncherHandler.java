@@ -155,6 +155,7 @@ public class DownloadSingleplayerLauncherHandler {
 					addItemToZip(account.getPlayerInventory(), uuid, "10", zip);
 					addItemToZip(account.getPlayerInventory(), uuid, "100", zip);
 					addItemToZip(account.getPlayerInventory(), uuid, "102", zip);
+					addItemToZip(account.getPlayerInventory(), uuid, "103", zip);
 					addItemToZip(account.getPlayerInventory(), uuid, "104", zip);
 					addItemToZip(account.getPlayerInventory(), uuid, "105", zip);
 					addItemToZip(account.getPlayerInventory(), uuid, "110", zip);
@@ -176,6 +177,7 @@ public class DownloadSingleplayerLauncherHandler {
 					addItemToZip(account.getPlayerInventory(), uuid, "9", zip);
 					addItemToZip(account.getPlayerInventory(), uuid, "avatars", zip);
 					addItemToZip(account.getPlayerInventory(), uuid, "level", zip);
+					addItemToZip(account.getPlayerInventory(), uuid, "savesettings", zip);
 
 					// Close
 					zip.close();

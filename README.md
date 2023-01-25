@@ -79,6 +79,9 @@ This is a VERY BUGGY module designed to add a command to create avatars using NP
 ## Module peer-to-peer
 This module is a very work-in-progress system designed to bring peer-to-peer play to Fer.al.
 
+## Module gcs-for-feral
+This module is a system designed to bring group chats to Fer.al via chat commands, **note: it is presently very buggy.**
+
 <br/>
 
 # Project licensing

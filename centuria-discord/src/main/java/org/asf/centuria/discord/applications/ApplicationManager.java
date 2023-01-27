@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -25,6 +26,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
@@ -38,27 +40,189 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.GuildChannel;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec;
+import discord4j.core.spec.InteractionCallbackSpec;
 import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.core.spec.InteractionReplyEditSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.ComponentData;
+import discord4j.discordjson.json.ImmutableMessageEditRequest.Builder;
+import discord4j.discordjson.json.MessageEditRequest;
 import discord4j.discordjson.json.MessageReferenceData;
 import discord4j.rest.entity.RestChannel;
+import discord4j.rest.entity.RestMessage;
 import discord4j.rest.util.Color;
+import discord4j.rest.util.Image.Format;
 import reactor.core.publisher.Mono;
 
 public class ApplicationManager {
+
+	private static ArrayList<PanelInfo> panels = new ArrayList<PanelInfo>();
 
 	/**
 	 * Starts the application manager
 	 */
 	public static void start() {
+		// Find panels
+		for (File f : new File("applications/panels")
+				.listFiles(t -> !t.isDirectory() && t.getName().endsWith(".json"))) {
+			try {
+				// Read JSON
+				JsonObject panelJson = JsonParser.parseString(Files.readString(f.toPath())).getAsJsonObject();
+				PanelInfo panel = new PanelInfo();
+				panel.guildID = panelJson.get("guild").getAsLong();
+				panel.channelID = panelJson.get("channel").getAsLong();
+				panel.messageID = panelJson.get("message").getAsLong();
+				String application = panelJson.get("application").getAsString();
 
+				// Load application
+				JsonObject data;
+				try {
+					data = JsonParser.parseString(Files.readString(Path.of("applications/" + application + ".json")))
+							.getAsJsonObject();
+				} catch (IOException e) {
+					return;
+				}
+				ApplicationDefinition def = new ApplicationDefinition().fromJson(data);
+				panel.def = def;
+				panel.application = application;
+
+				// Add panel
+				panels.add(panel);
+
+				// Refresh panel
+				refreshPanel(panel);
+			} catch (JsonSyntaxException | IOException e) {
+				f.delete(); // Invalid
+			}
+		}
+
+		// Run refresh thread
+		Thread th = new Thread(() -> {
+			while (true) {
+				// Refresh panels
+				PanelInfo[] panels;
+				while (true) {
+					try {
+						panels = ApplicationManager.panels.toArray(t -> new PanelInfo[t]);
+						break;
+					} catch (ConcurrentModificationException e) {
+					}
+				}
+				for (PanelInfo panel : panels) {
+					try {
+						refreshPanel(panel);
+					} catch (Exception e) {
+						// Prevent crash
+						e.printStackTrace();
+					}
+				}
+
+				try {
+					// Wait 15 seconds
+					Thread.sleep(9000000);
+				} catch (InterruptedException e) {
+					break;
+				}
+			}
+		}, "Panel refresh");
+		th.setDaemon(true);
+		th.start();
+	}
+
+	// Refreshes a application panel
+	private static void refreshPanel(PanelInfo panel) {
+		// Find guild
+		Guild guild = DiscordBotModule.getClient().getGuildById(Snowflake.of(panel.guildID)).block();
+
+		// Find channel
+		GuildChannel channel = guild.getChannelById(Snowflake.of(panel.channelID)).block();
+		if (channel == null) {
+			// Delete panel file this is likely a deleted panel
+			new File("applications/panels/" + panel.messageID + ".json").delete();
+			ApplicationManager.panels.remove(panel);
+		}
+
+		// Find message
+		RestMessage message = channel.getRestChannel().message(Snowflake.of(panel.messageID));
+		if (message == null) {
+			// Delete panel file this is likely a deleted panel
+			new File("applications/panels/" + panel.messageID + ".json").delete();
+			ApplicationManager.panels.remove(panel);
+		}
+
+		// Try to update
+		try {
+			// Check fields
+			String status;
+			Color color;
+			boolean disabled;
+			if (System.currentTimeMillis() > panel.def.deadline) {
+				status = "Status: past deadline";
+				disabled = true;
+				color = Color.RED;
+			} else if (new File("applications/applied/" + panel.application).exists()
+					&& new File("applications/applied/" + panel.application)
+							.listFiles().length >= panel.def.applicantLimit) {
+				status = "Status: applicant limit reached";
+				disabled = true;
+				color = Color.RED;
+			} else {
+				int current = 0;
+				if (new File("applications/applied/" + panel.application).exists())
+					current += new File("application/applied/" + panel.application).listFiles().length;
+				if (new File("application/active/" + panel.application).exists())
+					current += new File("application/active/" + panel.application).listFiles().length;
+				if (new File("application/active/" + panel.application).exists()
+						&& current >= panel.def.applicantLimit) {
+					status = "Status: applicant limit reached (review limit reached, might become available again)";
+					disabled = true;
+					color = Color.ORANGE;
+				} else {
+					status = "Available (" + (panel.def.applicantLimit - current) + " applications left)";
+					disabled = false;
+					color = Color.GREEN;
+				}
+			}
+			if (!status.equals(panel.lastStatus)) {
+				// Update
+				panel.lastStatus = status;
+
+				// Create message update
+				Builder msg = MessageEditRequest.builder();
+
+				// Build embed
+				EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
+				embed.color(color);
+				embed.thumbnail(guild.getIconUrl(Format.PNG)
+						.orElse(DiscordBotModule.getClient().getSelf().block().getAvatarUrl()));
+				embed.title(panel.def.name);
+				embed.description(message.getData().block().embeds().get(0).description().get());
+				embed.footer(status, DiscordBotModule.getClient().getSelf().block().getAvatarUrl());
+				msg.embeds(Arrays.asList(embed.build().asRequest()));
+
+				// Buttons
+				if (disabled)
+					msg.components(Arrays.asList(ActionRow
+							.of(Button.success("application/applyfor/" + panel.application, "Apply").disabled())
+							.getData()));
+				else
+					msg.components(Arrays.asList(ActionRow
+							.of(Button.success("application/applyfor/" + panel.application, "Apply")).getData()));
+
+				// Update
+				message.edit(msg.build()).block();
+			}
+		} catch (Exception e) {
+			// Delete panel file this is likely a deleted panel
+			new File("applications/panels/" + panel.messageID + ".json").delete();
+			ApplicationManager.panels.remove(panel);
+		}
 	}
 
 	/**
@@ -313,6 +477,67 @@ public class ApplicationManager {
 
 		// Handle accept/reject/etc
 		switch (id) {
+
+		// Apply
+		case "applyfor": {
+			CenturiaAccount account = LinkUtils
+					.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+			if (account == null) {
+				event.reply("**Error:** You dont have a Centuria account linked to your Discord account")
+						.withEphemeral(true).block();
+				return Mono.empty();
+			}
+
+			// Load parameters
+			String application = params;
+			int current = 0;
+			if (new File("applications/applied/" + application).exists())
+				current += new File("applications/applied/" + application).listFiles().length;
+			if (new File("applications/active/" + application).exists())
+				current += new File("applications/active/" + application).listFiles().length;
+
+			// Check
+			if (ApplicationManager.isApplying(event.getInteraction().getUser()))
+				return event.reply(InteractionApplicationCommandCallbackSpec
+						.builder().addEmbed(EmbedCreateSpec.builder()
+								.title("You can only apply for one application at a time.").color(Color.RED).build())
+						.ephemeral(true).build());
+			if (ApplicationManager.hasApplied(application, event.getInteraction().getUser()))
+				return event.reply(InteractionApplicationCommandCallbackSpec
+						.builder().addEmbed(EmbedCreateSpec.builder()
+								.title("You have already applied for this application.").color(Color.RED).build())
+						.ephemeral(true).build());
+
+			// Load application
+			JsonObject data;
+			try {
+				data = JsonParser.parseString(Files.readString(Path.of("applications/" + application + ".json")))
+						.getAsJsonObject();
+			} catch (IOException e) {
+				return Mono.empty();
+			}
+			ApplicationDefinition def = new ApplicationDefinition().fromJson(data);
+			if (current >= def.applicantLimit) {
+				// Limit reached
+				return event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.addEmbed(EmbedCreateSpec.builder()
+								.title("This application is presently full. Check again later.").color(Color.RED)
+								.build())
+						.ephemeral(true).build());
+			}
+
+			// Start application
+			event.deferReply(InteractionCallbackSpec.builder().ephemeral(true).build()).block();
+			if (!ApplicationManager.startApplication(application, event.getInteraction().getUser()))
+				return event.editReply(InteractionReplyEditSpec.builder()
+						.addEmbed(EmbedCreateSpec.builder().title("Error").description(
+								"An unexpected error occured, are your dms open?\\nIf they aren't open the cause of the error is likely that, however if your dms are actually open then this is a server error.")
+								.color(Color.RED).build())
+						.build());
+			return event.editReply(InteractionReplyEditSpec.builder()
+					.addEmbed(EmbedCreateSpec.builder().title("Application started in DM").color(Color.GREEN).build())
+					.build());
+		}
 
 		// Handle reject
 		case "accept": {
@@ -1490,7 +1715,7 @@ public class ApplicationManager {
 					MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
 
 					// Build embed
-					msg.addEmbed(EmbedCreateSpec.builder().title("Application Rejected")
+					msg.addEmbed(EmbedCreateSpec.builder().title("Application Status")
 							.color(type.equals("success") ? Color.GREEN : Color.RED).description(message).build());
 
 					// Send message
@@ -1562,6 +1787,39 @@ public class ApplicationManager {
 		zip.putNextEntry(new ZipEntry(file));
 		zip.write(data);
 		zip.closeEntry();
+	}
+
+	/**
+	 * Adds and refreshes a application panel
+	 * 
+	 * @param messageID   Panel ID
+	 * @param guild       Guild ID
+	 * @param channel     Channel ID
+	 * @param application Application
+	 */
+	public static void addPanelAndRefresh(long messageID, long guild, long channel, String application) {
+		// Add panel
+		PanelInfo info = new PanelInfo();
+
+		// Load application
+		JsonObject data;
+		try {
+			data = JsonParser.parseString(Files.readString(Path.of("applications/" + application + ".json")))
+					.getAsJsonObject();
+		} catch (IOException e) {
+			return;
+		}
+		ApplicationDefinition def = new ApplicationDefinition().fromJson(data);
+		info.def = def;
+		info.channelID = channel;
+		info.messageID = messageID;
+		info.guildID = guild;
+		info.application = application;
+		panels.add(info);
+
+		// Refresh
+		refreshPanel(info);
+
 	}
 
 }

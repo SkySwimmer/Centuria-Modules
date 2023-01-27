@@ -65,6 +65,18 @@ public class CommandHandler {
 	}
 
 	/**
+	 * The application panel setup command
+	 */
+	public static ApplicationCommandOptionData createApplicationPanel() {
+		return ApplicationCommandOptionData.builder().name("createapplicationpanel")
+				.description("Application panel creation command")
+				.addOption(ApplicationCommandOptionData.builder().name("application")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Application ID")
+						.required(true).build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
 	 * The account info command
 	 */
 	public static ApplicationCommandOptionData getAccountInfo() {
@@ -375,6 +387,36 @@ public class CommandHandler {
 					return event.editReply(
 							"An unexpected error occured, are your dms open?\nIf they aren't open the cause of the error is likely that, however if your dms are actually open then this is a server error.");
 				return event.editReply("Application started in DM");
+			}
+			case "createapplicationpanel": {
+				// Required permissions: admin (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "admin")) {
+					event.reply("**Error:** No Centuria admin permissions.").block();
+					return Mono.empty();
+				}
+
+				// Check application
+				String application = data.options().get().get(0).options().get().get(0).value().get();
+				if (!application.matches("^[0-9a-zA-Z]+$")
+						|| !new File("applications/" + application + ".json").exists())
+					return event.reply("**Error:** Invalid application.");
+
+				// Show modal
+				event.presentModal("Application Panel Creation", "createapplicationpanel/" + application,
+						Arrays.asList(ActionRow.of(TextInput.paragraph("message", "Message description", 1, 3000))))
+						.block();
 			}
 			case "generateapplicationcode": {
 				// Required permissions: admin (ingame)
@@ -1300,7 +1342,8 @@ public class CommandHandler {
 
 				// Show modal
 				event.presentModal("Account Panel Creation", "createaccountpanel",
-						Arrays.asList(ActionRow.of(TextInput.paragraph("message", "Message description")))).block();
+						Arrays.asList(ActionRow.of(TextInput.paragraph("message", "Message description", 1, 3000))))
+						.block();
 
 				break;
 			}

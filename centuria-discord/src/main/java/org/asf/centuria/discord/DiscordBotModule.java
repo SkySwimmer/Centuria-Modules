@@ -109,7 +109,8 @@ public class DiscordBotModule implements ICenturiaModule {
 			new File("applications/active").mkdirs();
 		if (!new File("applications/applied").exists())
 			new File("applications/applied").mkdirs();
-		ApplicationManager.start();
+		if (!new File("applications/panels").exists())
+			new File("applications/panels").mkdirs();
 
 		// Init registration helper
 		DiscordRegistrationHelper.init();
@@ -178,7 +179,8 @@ public class DiscordBotModule implements ICenturiaModule {
 					.addOption(CommandHandler.mute()).addOption(CommandHandler.ipBan())
 					.addOption(CommandHandler.makeModerator()).addOption(CommandHandler.makeAdmin())
 					.addOption(CommandHandler.removePerms()).addOption(CommandHandler.dmAnonymous())
-					.addOption(CommandHandler.generateApplicationCode()).addOption(CommandHandler.apply()).build();
+					.addOption(CommandHandler.generateApplicationCode()).addOption(CommandHandler.apply())
+					.addOption(CommandHandler.createApplicationPanel()).build();
 
 			// Connect
 			client.gateway().setEnabledIntents(IntentSet.of(Intent.GUILD_PRESENCES, Intent.GUILD_MESSAGES,
@@ -300,6 +302,7 @@ public class DiscordBotModule implements ICenturiaModule {
 
 		// Load link database
 		LinkUtils.init();
+		ApplicationManager.start();
 	}
 
 	public static synchronized void writePenalties() {

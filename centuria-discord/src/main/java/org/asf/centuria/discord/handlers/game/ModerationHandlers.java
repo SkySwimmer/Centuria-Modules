@@ -8,6 +8,7 @@ import org.asf.centuria.discord.ServerConfigUtils;
 import org.asf.centuria.modules.eventbus.EventListener;
 import org.asf.centuria.modules.eventbus.IEventReceiver;
 import org.asf.centuria.modules.events.accounts.AccountBanEvent;
+import org.asf.centuria.modules.events.accounts.AccountDeletionEvent;
 import org.asf.centuria.modules.events.accounts.AccountMuteEvent;
 import org.asf.centuria.modules.events.accounts.AccountPardonEvent;
 import org.asf.centuria.modules.events.accounts.MiscModerationEvent;
@@ -93,6 +94,16 @@ public class ModerationHandlers implements IEventReceiver {
 			} catch (Exception e) {
 			}
 		}
+	}
+
+	@EventListener
+	public void handleDelete(AccountDeletionEvent ev) {
+		// Find discord client (if present)
+		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
+
+		// Log moderation
+		moderationLog("Account Deleted", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(), null,
+				"SYSTEM", null);
 	}
 
 	private void moderationLog(String type, String userID, String displayName, String accountID, String data,

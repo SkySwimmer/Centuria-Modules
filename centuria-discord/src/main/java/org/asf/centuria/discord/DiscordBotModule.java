@@ -3,6 +3,7 @@ package org.asf.centuria.discord;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.Scanner;
 
 import org.asf.centuria.Centuria;
@@ -25,6 +26,7 @@ import org.asf.centuria.modules.events.accounts.AccountDeletionEvent;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
@@ -52,6 +54,9 @@ public class DiscordBotModule implements ICenturiaModule {
 
 	// Server name
 	private static String serverName;
+
+	// Ban memory
+	public static HashMap<String, JsonObject> penalties = new HashMap<String, JsonObject>();
 
 	/**
 	 * Retrieves the server name
@@ -96,6 +101,21 @@ public class DiscordBotModule implements ICenturiaModule {
 
 		// Disable default registration
 		Centuria.allowRegistration = false;
+
+		// Load penalties
+		File penaltyFile = new File("deletedaccountpenalties.json");
+		if (penaltyFile.exists()) {
+			JsonObject penaltyData;
+			try {
+				penaltyData = JsonParser.parseString(Files.readString(penaltyFile.toPath())).getAsJsonObject();
+			} catch (JsonSyntaxException | IOException e) {
+				throw new RuntimeException(e);
+			}
+			penaltyData.keySet().forEach(t -> {
+				penalties.put(t, penaltyData.get(t).getAsJsonObject());
+			});
+		} else
+			writePenalties();
 
 		// Load config file path as file object
 		File configFile = new File("discordbot.json");
@@ -241,8 +261,28 @@ public class DiscordBotModule implements ICenturiaModule {
 		LinkUtils.init();
 	}
 
+	public static synchronized void writePenalties() {
+		File penaltyFile = new File("deletedaccountpenalties.json");
+		JsonObject res = new JsonObject();
+		penalties.keySet().forEach(t -> res.add(t, penalties.get(t)));
+		try {
+			Files.writeString(penaltyFile.toPath(), res.toString());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	@Override
 	public void init() {
+	}
+
+	public static JsonObject getPenaltyFromMemory(String discord) {
+		if (penalties.containsKey(discord)) {
+			JsonObject obj = penalties.remove(discord);
+			writePenalties();
+			return obj;
+		}
+		return null;
 	}
 
 	@Override
@@ -253,8 +293,9 @@ public class DiscordBotModule implements ICenturiaModule {
 
 	@EventListener
 	public void handleDeleteAccount(AccountDeletionEvent event) {
-		if (LinkUtils.isPairedWithDiscord(event.getAccount()))
+		if (LinkUtils.isPairedWithDiscord(event.getAccount())) {
 			LinkUtils.unpairAccount(event.getAccount(), null, false);
+		}
 	}
 
 }

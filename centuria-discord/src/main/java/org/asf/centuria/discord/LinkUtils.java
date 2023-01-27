@@ -61,7 +61,7 @@ public class LinkUtils {
 	}
 
 	// Saves the account registry
-	private static void saveRegistry() {
+	private static synchronized void saveRegistry() {
 		// Load account link registry file path as file object
 		File accountLinkRegistry = new File("accountlink.json");
 
@@ -197,7 +197,8 @@ public class LinkUtils {
 	 */
 	public static String getDiscordAccountFrom(CenturiaAccount account) {
 		if (account.getSaveSharedInventory().containsItem("pairedaccount"))
-			return account.getSaveSharedInventory().getItem("pairedaccount").getAsJsonObject().get("userId").getAsString();
+			return account.getSaveSharedInventory().getItem("pairedaccount").getAsJsonObject().get("userId")
+					.getAsString();
 		return null;
 	}
 
@@ -228,6 +229,11 @@ public class LinkUtils {
 		// Add to registry
 		accountLinks.addProperty(userID, account.getAccountID());
 		saveRegistry();
+
+		// Add penalty if present
+		JsonObject penalty = DiscordBotModule.getPenaltyFromMemory(userID);
+		if (penalty != null)
+			account.getSaveSharedInventory().setItem("penalty", penalty);
 
 		if (sendDM) {
 			// DM the user
@@ -284,6 +290,14 @@ public class LinkUtils {
 		// Load account details
 		String userID = account.getSaveSharedInventory().getItem("pairedaccount").getAsJsonObject().get("userId")
 				.getAsString();
+
+		// Check penalty
+		if (account.getSaveSharedInventory().containsItem("penalty")) {
+			// Save penalty
+			DiscordBotModule.penalties.put(userID,
+					account.getSaveSharedInventory().getItem("penalty").getAsJsonObject());
+			DiscordBotModule.writePenalties();
+		}
 
 		// Remove pair from inventory
 		account.getSaveSharedInventory().deleteItem("pairedaccount");

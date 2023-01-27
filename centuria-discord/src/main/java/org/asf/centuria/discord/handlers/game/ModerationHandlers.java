@@ -105,7 +105,7 @@ public class ModerationHandlers implements IEventReceiver {
 			message += "\n" + data;
 		if (reason != null)
 			message += "\nAction reason: **" + reason + "**\n";
-		else if (data != null)
+		else if (data == null)
 			message += "\n";
 		String issuerStr = "**" + issuer + "**";
 		if (!issuerStr.equals("SYSTEM")) {

@@ -17,9 +17,9 @@ public class UserAllowedIpUtils {
 	 * @return True if allowed, false otherwise
 	 */
 	public static boolean isAllowed(CenturiaAccount account, String ip) {
-		if (account.getPlayerInventory().containsItem("allowedips")) {
+		if (account.getSaveSharedInventory().containsItem("allowedips")) {
 			// Load item
-			JsonArray arr = account.getPlayerInventory().getItem("allowedips").getAsJsonArray();
+			JsonArray arr = account.getSaveSharedInventory().getItem("allowedips").getAsJsonArray();
 
 			// Loop through array, find the IP
 			for (JsonElement ele : arr)
@@ -36,9 +36,9 @@ public class UserAllowedIpUtils {
 	 * @return Array of whitelisted IPs
 	 */
 	public static String[] getAllowedIps(CenturiaAccount account) {
-		if (account.getPlayerInventory().containsItem("allowedips")) {
+		if (account.getSaveSharedInventory().containsItem("allowedips")) {
 			// Load item
-			JsonArray arr = account.getPlayerInventory().getItem("allowedips").getAsJsonArray();
+			JsonArray arr = account.getSaveSharedInventory().getItem("allowedips").getAsJsonArray();
 
 			// Build list
 			ArrayList<String> ips = new ArrayList<String>();
@@ -62,17 +62,17 @@ public class UserAllowedIpUtils {
 	public static void whitelistIp(CenturiaAccount account, String ip) {
 		if (!isAllowed(account, ip)) {
 			// Create list if not present
-			if (!account.getPlayerInventory().containsItem("allowedips"))
-				account.getPlayerInventory().setItem("allowedips", new JsonArray());
+			if (!account.getSaveSharedInventory().containsItem("allowedips"))
+				account.getSaveSharedInventory().setItem("allowedips", new JsonArray());
 
 			// Load list
-			JsonArray arr = account.getPlayerInventory().getItem("allowedips").getAsJsonArray();
+			JsonArray arr = account.getSaveSharedInventory().getItem("allowedips").getAsJsonArray();
 
 			// Add item
 			arr.add(ip);
 
 			// Save
-			account.getPlayerInventory().setItem("allowedips", arr);
+			account.getSaveSharedInventory().setItem("allowedips", arr);
 		}
 	}
 
@@ -85,7 +85,7 @@ public class UserAllowedIpUtils {
 	public static void removeFromWhitelist(CenturiaAccount account, String ip) {
 		if (isAllowed(account, ip)) {
 			// Load list
-			JsonArray arr = account.getPlayerInventory().getItem("allowedips").getAsJsonArray();
+			JsonArray arr = account.getSaveSharedInventory().getItem("allowedips").getAsJsonArray();
 
 			// Find and remove item
 			for (JsonElement ele : arr)
@@ -95,7 +95,7 @@ public class UserAllowedIpUtils {
 				}
 
 			// Save
-			account.getPlayerInventory().setItem("allowedips", arr);
+			account.getSaveSharedInventory().setItem("allowedips", arr);
 		}
 	}
 

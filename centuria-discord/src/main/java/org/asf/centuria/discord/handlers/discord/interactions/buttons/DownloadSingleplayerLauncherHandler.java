@@ -16,6 +16,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.accounts.PlayerInventory;
+import org.asf.centuria.accounts.SaveMode;
 import org.asf.centuria.discord.LinkUtils;
 
 import discord4j.core.GatewayDiscordClient;
@@ -151,33 +152,33 @@ public class DownloadSingleplayerLauncherHandler {
 					zip.closeEntry();
 
 					// Add inventory data
-					addItemToZip(account.getPlayerInventory(), uuid, "1", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "10", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "100", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "102", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "103", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "104", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "105", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "110", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "111", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "2", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "201", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "3", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "300", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "302", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "303", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "304", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "311", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "4", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "400", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "5", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "6", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "7", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "8", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "9", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "avatars", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "level", zip);
-					addItemToZip(account.getPlayerInventory(), uuid, "savesettings", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "1", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "10", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "100", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "102", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "103", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "104", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "105", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "110", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "111", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "2", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "201", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "3", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "300", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "302", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "303", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "304", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "311", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "4", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "400", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "5", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "6", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "7", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "8", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "9", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "avatars", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "level", zip);
+					addItemToZip(account.getSaveSpecificInventory(), uuid, "savesettings", zip);
 
 					// Close
 					zip.close();
@@ -185,8 +186,13 @@ public class DownloadSingleplayerLauncherHandler {
 
 					// Build message
 					MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
-					msg.content(
-							"Here you have a Singleplayer Launcher.\nThis specific zip INCLUDES your player data.\n\nNote that some items arent included for server security.\nPlease also note that due to file limits, the bundled java is not included, you will need to copy `java-17` from a online launcher to this launcher for the launcher to work.");
+					if (account.getSaveMode() == SaveMode.MANAGED) {
+						msg.content(
+								"Here you have a Singleplayer Launcher.\nThis specific zip INCLUDES your player data.\n\nNote that some items arent included for server security.\nPlease also note that due to file limits, the bundled java is not included, you will need to copy `java-17` from a online launcher to this launcher for the launcher to work.\n\n**IMPORTANT NOTICE:**\nThis only includes your ACTIVE save data, you need to switch saves and download the data separately if you want your other saves. Managed Save Data is very complicated and cannot be switched on the run for downloading.");
+					} else {
+						msg.content(
+								"Here you have a Singleplayer Launcher.\nThis specific zip INCLUDES your player data.\n\nNote that some items arent included for server security.\nPlease also note that due to file limits, the bundled java is not included, you will need to copy `java-17` from a online launcher to this launcher for the launcher to work.");
+					}
 
 					// Add file
 					msg.addFile("EmuFeral Singleplayer Launcher.zip", new ByteArrayInputStream(output.toByteArray()));

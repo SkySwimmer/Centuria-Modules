@@ -17,9 +17,9 @@ public class UserIpBlockUtils {
 	 * @return True if blocked, false otherwise
 	 */
 	public static boolean isBlocked(CenturiaAccount account, String ip) {
-		if (account.getPlayerInventory().containsItem("blockedips")) {
+		if (account.getSaveSharedInventory().containsItem("blockedips")) {
 			// Load item
-			JsonArray arr = account.getPlayerInventory().getItem("blockedips").getAsJsonArray();
+			JsonArray arr = account.getSaveSharedInventory().getItem("blockedips").getAsJsonArray();
 
 			// Loop through array, find the IP
 			for (JsonElement ele : arr)
@@ -36,9 +36,9 @@ public class UserIpBlockUtils {
 	 * @return Array of blocked IPs
 	 */
 	public static String[] getBlockedIps(CenturiaAccount account) {
-		if (account.getPlayerInventory().containsItem("blockedips")) {
+		if (account.getSaveSharedInventory().containsItem("blockedips")) {
 			// Load item
-			JsonArray arr = account.getPlayerInventory().getItem("blockedips").getAsJsonArray();
+			JsonArray arr = account.getSaveSharedInventory().getItem("blockedips").getAsJsonArray();
 
 			// Build list
 			ArrayList<String> ips = new ArrayList<String>();
@@ -62,17 +62,17 @@ public class UserIpBlockUtils {
 	public static void blockIp(CenturiaAccount account, String ip) {
 		if (!isBlocked(account, ip)) {
 			// Create list if not present
-			if (!account.getPlayerInventory().containsItem("blockedips"))
-				account.getPlayerInventory().setItem("blockedips", new JsonArray());
+			if (!account.getSaveSharedInventory().containsItem("blockedips"))
+				account.getSaveSharedInventory().setItem("blockedips", new JsonArray());
 
 			// Load list
-			JsonArray arr = account.getPlayerInventory().getItem("blockedips").getAsJsonArray();
+			JsonArray arr = account.getSaveSharedInventory().getItem("blockedips").getAsJsonArray();
 
 			// Add item
 			arr.add(ip);
 
 			// Save
-			account.getPlayerInventory().setItem("blockedips", arr);
+			account.getSaveSharedInventory().setItem("blockedips", arr);
 		}
 	}
 
@@ -85,7 +85,7 @@ public class UserIpBlockUtils {
 	public static void unblockIp(CenturiaAccount account, String ip) {
 		if (isBlocked(account, ip)) {
 			// Load list
-			JsonArray arr = account.getPlayerInventory().getItem("blockedips").getAsJsonArray();
+			JsonArray arr = account.getSaveSharedInventory().getItem("blockedips").getAsJsonArray();
 
 			// Find and remove item
 			for (JsonElement ele : arr)
@@ -95,7 +95,7 @@ public class UserIpBlockUtils {
 				}
 
 			// Save
-			account.getPlayerInventory().setItem("blockedips", arr);
+			account.getSaveSharedInventory().setItem("blockedips", arr);
 		}
 	}
 

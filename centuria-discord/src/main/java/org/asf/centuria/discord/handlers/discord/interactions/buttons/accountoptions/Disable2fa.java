@@ -35,13 +35,13 @@ public class Disable2fa {
 			CenturiaAccount acc = AccountManager.getInstance().getAccount(gid);
 			if (acc != null) {
 				// Save option
-				if (!acc.getPlayerInventory().containsItem("accountoptions"))
-					acc.getPlayerInventory().setItem("accountoptions", new JsonObject());
-				JsonObject config = acc.getPlayerInventory().getItem("accountoptions").getAsJsonObject();
+				if (!acc.getSaveSharedInventory().containsItem("accountoptions"))
+					acc.getSaveSharedInventory().setItem("accountoptions", new JsonObject());
+				JsonObject config = acc.getSaveSharedInventory().getItem("accountoptions").getAsJsonObject();
 				if (config.has("enable2fa"))
 					config.remove("enable2fa");
 				config.addProperty("enable2fa", false);
-				acc.getPlayerInventory().setItem("accountoptions", config);
+				acc.getSaveSharedInventory().setItem("accountoptions", config);
 
 				// Update message
 				MessageReferenceData ref = event.getMessage().get().getData().messageReference().get();

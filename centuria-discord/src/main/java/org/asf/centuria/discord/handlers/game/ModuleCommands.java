@@ -22,6 +22,7 @@ public class ModuleCommands implements IEventReceiver {
 	public void initCommands(ModuleCommandSyntaxListEvent ev) {
 		// Add pair and unpair
 		ev.addCommandSyntaxMessage("pairdiscord <pair-code>");
+		ev.addCommandSyntaxMessage("unpairdiscord [confirm]");
 		ev.addCommandSyntaxMessage("transferdiscord <pair-code> [confirm]");
 		ev.addCommandSyntaxMessage("2faipblock [list/unblock] [<ip-address>]");
 		ev.addCommandSyntaxMessage("2faipwhitelist [list/revoke] [<ip-address>]");
@@ -114,7 +115,7 @@ public class ModuleCommands implements IEventReceiver {
 			}
 
 			// Check for existing account connection
-			if (!ev.getAccount().getPlayerInventory().containsItem("pairedaccount")) {
+			if (!ev.getAccount().getSaveSharedInventory().containsItem("pairedaccount")) {
 				// Respond with error message
 				ev.respond("Error: unpaired account.");
 				return;
@@ -152,6 +153,30 @@ public class ModuleCommands implements IEventReceiver {
 			User discordUser = DiscordBotModule.getClient().getUserById(Snowflake.of(userId)).block();
 			ev.respond("Success! Current Centuria account has been paired with the Discord account "
 					+ discordUser.getTag() + "!");
+			break;
+		}
+		case "unpairdiscord": {
+			if (ev.getCommandArguments().length < 1 || !ev.getCommandArguments()[0].equals("confirm")) {
+				// Respond with error message
+				ev.respond(
+						"Are you sure you wish to unpair this account from your Discord account?\nIf you wish to proceed, run '>unpairdiscord confirm'");
+				return;
+			}
+
+			// Check for existing account connection
+			if (!ev.getAccount().getSaveSharedInventory().containsItem("pairedaccount")) {
+				// Respond with error message
+				ev.respond("Error: unpaired account.");
+				return;
+			}
+
+			// Remove connection
+			ev.respond("Attempting to unpair account... Please wait...");
+			LinkUtils.unpairAccount(ev.getAccount(),
+					((InetSocketAddress) ev.getClient().getSocket().getRemoteSocketAddress()).getAddress()
+							.getHostAddress(),
+					true);
+			ev.respond("Success! Current Centuria account has been unpaired from your Discord account!");
 			break;
 		}
 		case "2faipblock": {

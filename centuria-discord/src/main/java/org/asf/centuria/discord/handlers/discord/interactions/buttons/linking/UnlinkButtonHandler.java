@@ -30,7 +30,7 @@ public class UnlinkButtonHandler {
 			CenturiaAccount acc = AccountManager.getInstance().getAccount(gid);
 			if (acc != null) {
 				// Unlink account connection
-				if (acc.getPlayerInventory().containsItem("pairedaccount")) {
+				if (acc.getSaveSharedInventory().containsItem("pairedaccount")) {
 					// Unlink account
 					LinkUtils.unpairAccount(acc, null, false);
 					event.getMessage().get().getChannel().block().createMessage("Account has been unlinked.")

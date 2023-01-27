@@ -198,7 +198,7 @@ public class RegistrationHandler {
 
 				// Enable 2fa
 				if (enable2fa) {
-					PlayerInventory inv = manager.getAccount(accountID).getPlayerInventory();
+					PlayerInventory inv = manager.getAccount(accountID).getSaveSharedInventory();
 					if (!inv.containsItem("accountoptions"))
 						inv.setItem("accountoptions", new JsonObject());
 					JsonObject config = inv.getItem("accountoptions").getAsJsonObject();

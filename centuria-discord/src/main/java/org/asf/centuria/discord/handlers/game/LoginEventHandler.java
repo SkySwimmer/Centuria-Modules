@@ -37,10 +37,11 @@ public class LoginEventHandler implements IEventReceiver {
 
 		// 2fa (if enabled)
 		if (LinkUtils.isPairedWithDiscord(event.getAccount())
-				&& event.getAccount().getPlayerInventory().containsItem("accountoptions")
-				&& event.getAccount().getPlayerInventory().getItem("accountoptions").getAsJsonObject().has("enable2fa")
-				&& event.getAccount().getPlayerInventory().getItem("accountoptions").getAsJsonObject().get("enable2fa")
-						.getAsBoolean()) {
+				&& event.getAccount().getSaveSharedInventory().containsItem("accountoptions")
+				&& event.getAccount().getSaveSharedInventory().getItem("accountoptions").getAsJsonObject()
+						.has("enable2fa")
+				&& event.getAccount().getSaveSharedInventory().getItem("accountoptions").getAsJsonObject()
+						.get("enable2fa").getAsBoolean()) {
 			// Check whitelist
 			if (!UserAllowedIpUtils.isAllowed(event.getAccount(), ip) || ip.equals("127.0.0.1")) {
 				try {
@@ -143,7 +144,12 @@ public class LoginEventHandler implements IEventReceiver {
 								Button.danger("confirmdeny2fa/" + userId + "/" + codeReject, "Reject login")));
 
 					// Send DM
-					owner.getPrivateChannel().block().createMessage(msg.build()).subscribe();
+					try {
+						owner.getPrivateChannel().block().createMessage(msg.build()).subscribe();
+					} catch (Exception e) {
+						// DM error, probably no mutual server, we cannot risk locking people out
+						return;
+					}
 
 					// Wait for confirmation
 					while (!cont.confirmed && event.getClient().isConnected()) {

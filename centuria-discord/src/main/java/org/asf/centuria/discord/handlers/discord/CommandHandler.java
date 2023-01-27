@@ -162,8 +162,8 @@ public class CommandHandler {
 				}
 
 				String permLevel = "member";
-				if (modacc.getPlayerInventory().containsItem("permissions")) {
-					permLevel = modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
@@ -218,8 +218,8 @@ public class CommandHandler {
 				}
 
 				String permLevel = "member";
-				if (modacc.getPlayerInventory().containsItem("permissions")) {
-					permLevel = modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
@@ -272,8 +272,8 @@ public class CommandHandler {
 				}
 
 				String permLevel = "member";
-				if (modacc.getPlayerInventory().containsItem("permissions")) {
-					permLevel = modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
@@ -301,13 +301,13 @@ public class CommandHandler {
 				}
 
 				// Check rank
-				if (acc.getPlayerInventory().containsItem("permissions")) {
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
 					if ((GameServer
-							.hasPerm(modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+							.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 									.get("permissionLevel").getAsString(), "developer")
 							&& !GameServer.hasPerm(permLevel, "developer"))
 							|| GameServer
-									.hasPerm(modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+									.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 											.get("permissionLevel").getAsString(), "admin")
 									&& !GameServer.hasPerm(permLevel, "admin")) {
 						event.reply("**Error:** unable to moderate higher-ranking members.").block();
@@ -335,8 +335,8 @@ public class CommandHandler {
 				}
 
 				String permLevel = "member";
-				if (modacc.getPlayerInventory().containsItem("permissions")) {
-					permLevel = modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
@@ -364,13 +364,13 @@ public class CommandHandler {
 				}
 
 				// Check rank
-				if (acc.getPlayerInventory().containsItem("permissions")) {
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
 					if ((GameServer
-							.hasPerm(modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+							.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 									.get("permissionLevel").getAsString(), "developer")
 							&& !GameServer.hasPerm(permLevel, "developer"))
 							|| GameServer
-									.hasPerm(modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+									.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 											.get("permissionLevel").getAsString(), "admin")
 									&& !GameServer.hasPerm(permLevel, "admin")) {
 						event.reply("**Error:** unable to moderate higher-ranking members.").block();
@@ -398,8 +398,8 @@ public class CommandHandler {
 				}
 
 				String permLevel = "member";
-				if (modacc.getPlayerInventory().containsItem("permissions")) {
-					permLevel = modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
@@ -427,13 +427,13 @@ public class CommandHandler {
 				}
 
 				// Check rank
-				if (acc.getPlayerInventory().containsItem("permissions")) {
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
 					if ((GameServer
-							.hasPerm(modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+							.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 									.get("permissionLevel").getAsString(), "developer")
 							&& !GameServer.hasPerm(permLevel, "developer"))
 							|| GameServer
-									.hasPerm(modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+									.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 											.get("permissionLevel").getAsString(), "admin")
 									&& !GameServer.hasPerm(permLevel, "admin")) {
 						event.reply("**Error:** unable to moderate higher-ranking members.").block();
@@ -464,8 +464,8 @@ public class CommandHandler {
 				}
 
 				String permLevel = "member";
-				if (modacc.getPlayerInventory().containsItem("permissions")) {
-					permLevel = modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
@@ -493,13 +493,13 @@ public class CommandHandler {
 				}
 
 				// Check rank
-				if (acc.getPlayerInventory().containsItem("permissions")) {
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
 					if ((GameServer
-							.hasPerm(modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+							.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 									.get("permissionLevel").getAsString(), "developer")
 							&& !GameServer.hasPerm(permLevel, "developer"))
 							|| GameServer
-									.hasPerm(modacc.getPlayerInventory().getItem("permissions").getAsJsonObject()
+									.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
 											.get("permissionLevel").getAsString(), "admin")
 									&& !GameServer.hasPerm(permLevel, "admin")) {
 						event.reply("**Error:** unable to moderate higher-ranking members.").block();
@@ -527,8 +527,8 @@ public class CommandHandler {
 				}
 
 				String permLevel = "member";
-				if (acc.getPlayerInventory().containsItem("permissions")) {
-					permLevel = acc.getPlayerInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
 							.getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
@@ -581,8 +581,8 @@ public class CommandHandler {
 					return Mono.empty();
 				}
 				String permLevel = "member";
-				if (acc.getPlayerInventory().containsItem("permissions")) {
-					permLevel = acc.getPlayerInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
 							.getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
@@ -636,8 +636,9 @@ public class CommandHandler {
 					return Mono.empty();
 				}
 				String permLevel = "member";
-				if (acc.getPlayerInventory().containsItem("permissions")) {
-					permLevel = acc.getPlayerInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = acc
+							.getSaveSharedInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
 							.getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {

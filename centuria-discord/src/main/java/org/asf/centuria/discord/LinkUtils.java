@@ -186,7 +186,7 @@ public class LinkUtils {
 	 *         otherwise.
 	 */
 	public static boolean isPairedWithDiscord(CenturiaAccount account) {
-		return account.getPlayerInventory().containsItem("pairedaccount");
+		return account.getSaveSharedInventory().containsItem("pairedaccount");
 	}
 
 	/**
@@ -196,8 +196,8 @@ public class LinkUtils {
 	 * @return Discord UserID string or null
 	 */
 	public static String getDiscordAccountFrom(CenturiaAccount account) {
-		if (account.getPlayerInventory().containsItem("pairedaccount"))
-			return account.getPlayerInventory().getItem("pairedaccount").getAsJsonObject().get("userId").getAsString();
+		if (account.getSaveSharedInventory().containsItem("pairedaccount"))
+			return account.getSaveSharedInventory().getItem("pairedaccount").getAsJsonObject().get("userId").getAsString();
 		return null;
 	}
 
@@ -213,8 +213,8 @@ public class LinkUtils {
 	public static void pairAccount(CenturiaAccount account, String userID, String address, boolean sendDM,
 			boolean isTransfer) {
 		// Remove pair from if present inventory
-		if (account.getPlayerInventory().containsItem("pairedaccount"))
-			account.getPlayerInventory().deleteItem("pairedaccount");
+		if (account.getSaveSharedInventory().containsItem("pairedaccount"))
+			account.getSaveSharedInventory().deleteItem("pairedaccount");
 
 		// Unpair from link registration
 		if (accountLinks.has(userID))
@@ -223,7 +223,7 @@ public class LinkUtils {
 		// Add new link
 		JsonObject link = new JsonObject();
 		link.addProperty("userId", userID);
-		account.getPlayerInventory().setItem("pairedaccount", link);
+		account.getSaveSharedInventory().setItem("pairedaccount", link);
 
 		// Add to registry
 		accountLinks.addProperty(userID, account.getAccountID());
@@ -282,11 +282,11 @@ public class LinkUtils {
 	 */
 	public static void unpairAccount(CenturiaAccount account, String address, boolean sendDM) {
 		// Load account details
-		String userID = account.getPlayerInventory().getItem("pairedaccount").getAsJsonObject().get("userId")
+		String userID = account.getSaveSharedInventory().getItem("pairedaccount").getAsJsonObject().get("userId")
 				.getAsString();
 
 		// Remove pair from inventory
-		account.getPlayerInventory().deleteItem("pairedaccount");
+		account.getSaveSharedInventory().deleteItem("pairedaccount");
 
 		// Unpair from link registration
 		if (accountLinks.has(userID))

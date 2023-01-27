@@ -30,10 +30,10 @@ public class RelinkButtonHandler {
 			CenturiaAccount acc = AccountManager.getInstance().getAccount(gid);
 			if (acc != null) {
 				// Unlink existing account connection
-				if (acc.getPlayerInventory().containsItem("pairedaccount")) {
+				if (acc.getSaveSharedInventory().containsItem("pairedaccount")) {
 					// Check if currently linked to this account
-					String userID = acc.getPlayerInventory().getItem("pairedaccount").getAsJsonObject().get("userId")
-							.getAsString();
+					String userID = acc.getSaveSharedInventory().getItem("pairedaccount").getAsJsonObject()
+							.get("userId").getAsString();
 					if (userID.equals(uid)) {
 						// Return error
 						event.getMessage().get().getChannel().block()

@@ -72,8 +72,8 @@ public class InteractionModalHandler {
 				return Mono.empty();
 			}
 			String permLevel = "member";
-			if (acc.getPlayerInventory().containsItem("permissions")) {
-				permLevel = acc.getPlayerInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
+			if (acc.getSaveSharedInventory().containsItem("permissions")) {
+				permLevel = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
 						.getAsString();
 			}
 			if (!GameServer.hasPerm(permLevel, "admin")) {

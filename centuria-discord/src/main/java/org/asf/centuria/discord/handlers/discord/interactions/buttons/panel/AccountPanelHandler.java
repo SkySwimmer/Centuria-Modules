@@ -5,6 +5,7 @@ import java.io.InputStream;
 
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.accounts.PlayerInventory;
+import org.asf.centuria.accounts.SaveMode;
 import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
 import org.asf.centuria.interactions.modules.QuestManager;
@@ -50,7 +51,7 @@ public class AccountPanelHandler {
 			try {
 				// Find account
 				CenturiaAccount account = LinkUtils.getAccountByDiscordID(userID);
-				PlayerInventory inv = account.getPlayerInventory();
+				PlayerInventory inv = account.getSaveSpecificInventory();
 
 				// Create account panel embed
 				EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
@@ -71,6 +72,10 @@ public class AccountPanelHandler {
 
 				// Online status
 				embed.addField("Is online?", account.getOnlinePlayerInstance() != null ? "Yes" : "No", true);
+
+				// Save
+				if (account.getSaveMode() == SaveMode.MANAGED)
+					embed.addField("Active save", account.getSaveManager().getCurrentActiveSave(), true);
 
 				// Avatar info
 				String species = "Kitsune";

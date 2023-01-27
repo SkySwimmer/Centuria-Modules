@@ -10,6 +10,7 @@ import java.util.zip.ZipOutputStream;
 import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.accounts.PlayerInventory;
+import org.asf.centuria.accounts.SaveMode;
 import org.asf.centuria.discord.LinkUtils;
 import org.asf.centuria.discord.TimedActions;
 
@@ -75,9 +76,9 @@ public class AccountOptionsMenuHandler {
 			InteractionApplicationCommandCallbackSpec.Builder msg = InteractionApplicationCommandCallbackSpec.builder();
 
 			// Get status of 2fa
-			boolean enabled2fa = account.getPlayerInventory().containsItem("accountoptions")
-					&& account.getPlayerInventory().getItem("accountoptions").getAsJsonObject().has("enable2fa")
-					&& account.getPlayerInventory().getItem("accountoptions").getAsJsonObject().get("enable2fa")
+			boolean enabled2fa = account.getSaveSharedInventory().containsItem("accountoptions")
+					&& account.getSaveSharedInventory().getItem("accountoptions").getAsJsonObject().has("enable2fa")
+					&& account.getSaveSharedInventory().getItem("accountoptions").getAsJsonObject().get("enable2fa")
 							.getAsBoolean();
 
 			// Message content
@@ -162,40 +163,46 @@ public class AccountOptionsMenuHandler {
 			MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
 
 			// Message
-			msg.content("The following zip contains your player inventory.\n"
-					+ "Please note that some items aren't included for server protection.");
+			if (account.getSaveMode() == SaveMode.MANAGED) {
+				msg.content("The following zip contains your player inventory.\n"
+						+ "Please note that some items aren't included for server protection.\n\n**IMPORTANT NOTICE:**\nThis only includes your ACTIVE save data, you need to switch saves and download the data separately if you want your other saves. Managed Save Data is very complicated and cannot be switched on the run for downloading.");
+			} else {
+				msg.content("The following zip contains your player inventory.\n"
+						+ "Please note that some items aren't included for server protection.");
+			}
 
 			ByteArrayOutputStream strm = new ByteArrayOutputStream();
 			try {
 				ZipOutputStream invZip = new ZipOutputStream(strm);
+
 				// Add all inventory objects
-				addItemToZip(account.getPlayerInventory(), "1", invZip);
-				addItemToZip(account.getPlayerInventory(), "10", invZip);
-				addItemToZip(account.getPlayerInventory(), "100", invZip);
-				addItemToZip(account.getPlayerInventory(), "102", invZip);
-				addItemToZip(account.getPlayerInventory(), "103", invZip);
-				addItemToZip(account.getPlayerInventory(), "104", invZip);
-				addItemToZip(account.getPlayerInventory(), "105", invZip);
-				addItemToZip(account.getPlayerInventory(), "110", invZip);
-				addItemToZip(account.getPlayerInventory(), "111", invZip);
-				addItemToZip(account.getPlayerInventory(), "2", invZip);
-				addItemToZip(account.getPlayerInventory(), "201", invZip);
-				addItemToZip(account.getPlayerInventory(), "3", invZip);
-				addItemToZip(account.getPlayerInventory(), "300", invZip);
-				addItemToZip(account.getPlayerInventory(), "302", invZip);
-				addItemToZip(account.getPlayerInventory(), "303", invZip);
-				addItemToZip(account.getPlayerInventory(), "304", invZip);
-				addItemToZip(account.getPlayerInventory(), "311", invZip);
-				addItemToZip(account.getPlayerInventory(), "4", invZip);
-				addItemToZip(account.getPlayerInventory(), "400", invZip);
-				addItemToZip(account.getPlayerInventory(), "5", invZip);
-				addItemToZip(account.getPlayerInventory(), "6", invZip);
-				addItemToZip(account.getPlayerInventory(), "7", invZip);
-				addItemToZip(account.getPlayerInventory(), "8", invZip);
-				addItemToZip(account.getPlayerInventory(), "9", invZip);
-				addItemToZip(account.getPlayerInventory(), "avatars", invZip);
-				addItemToZip(account.getPlayerInventory(), "level", invZip);
-				addItemToZip(account.getPlayerInventory(), "savesettings", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "1", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "10", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "100", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "102", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "103", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "104", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "105", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "110", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "111", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "2", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "201", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "3", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "300", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "302", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "303", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "304", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "311", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "4", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "400", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "5", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "6", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "7", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "8", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "9", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "avatars", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "level", invZip);
+				addItemToZip(account.getSaveSpecificInventory(), "savesettings", invZip);
 				invZip.close();
 				strm.close();
 			} catch (IOException e) {

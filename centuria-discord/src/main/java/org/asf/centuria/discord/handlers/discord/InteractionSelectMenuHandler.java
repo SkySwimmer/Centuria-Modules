@@ -1,6 +1,7 @@
 package org.asf.centuria.discord.handlers.discord;
 
 import org.asf.centuria.discord.handlers.discord.interactions.selectmenu.AccountOptionsMenuHandler;
+import org.asf.centuria.discord.handlers.discord.interactions.selectmenu.SaveSelectMenu;
 import org.asf.centuria.discord.handlers.discord.interactions.selectmenu.ServerConfigMenuHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.selectmenu.ServerOptionsMenuHandler;
 
@@ -26,6 +27,8 @@ public class InteractionSelectMenuHandler {
 			return ServerOptionsMenuHandler.handle(id, event, gateway);
 		} else if (id.equals("accountoption")) {
 			return AccountOptionsMenuHandler.handle(id, event, gateway);
+		} else if (id.equals("saveselect")) {
+			return SaveSelectMenu.handle(id, event, gateway);
 		}
 
 		// Default handler

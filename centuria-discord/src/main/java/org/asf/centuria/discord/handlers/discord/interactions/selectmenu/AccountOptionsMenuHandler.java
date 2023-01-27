@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -114,6 +115,54 @@ public class AccountOptionsMenuHandler {
 			return event.presentModal(modal.build());
 		}
 
+		// Save selection
+		case "selectsave": {
+			// Build message
+			InteractionApplicationCommandCallbackSpec.Builder msg = InteractionApplicationCommandCallbackSpec.builder();
+
+			// Check
+			if (account.getSaveMode() != SaveMode.MANAGED)
+				return event.deferEdit();
+
+			// Message content
+			msg.content("Select save");
+
+			// Add saves
+			ArrayList<Option> options = new ArrayList<Option>();
+			for (String save : account.getSaveManager().getSaves())
+				if (account.getSaveManager().getCurrentActiveSave().equals(save))
+					options.add(Option.ofDefault(save, save));
+				else
+					options.add(Option.of(save, save));
+
+			// Dropdown
+			msg.addComponent(ActionRow.of(SelectMenu.of("saveselect", options)));
+
+			// Send message
+			return event.reply(msg.build());
+		}
+
+		// Data migration
+		case "migrate": {
+			// Build message
+			InteractionApplicationCommandCallbackSpec.Builder msg = InteractionApplicationCommandCallbackSpec.builder();
+
+			// Check
+			if (account.getSaveMode() == SaveMode.MANAGED)
+				return event.deferEdit();
+
+			// Message content
+			msg.content("**WARNING!**\n"
+					+ "Account data migration is a permanent operation! Are you sure you wish to continue?\n\n"
+					+ "If you confirm migration the system will send you a backup of your data first.");
+
+			// Buttons
+			msg.addComponent(ActionRow.of(Button.secondary("confirmmigrateaccount", "Confirm migration"),
+					Button.primary("dismiss", "Dismiss")));
+			// Send message
+			return event.reply(msg.build());
+		}
+
 		// 2-factor authentication
 		case "2fa": {
 			// Build message
@@ -205,6 +254,7 @@ public class AccountOptionsMenuHandler {
 		case "downloaddata": {
 			// Build message
 			MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
+			event.deferReply().block();
 
 			// Message
 			if (account.getSaveMode() == SaveMode.MANAGED) {
@@ -258,8 +308,8 @@ public class AccountOptionsMenuHandler {
 			// Send message
 			event.getInteraction().getChannel().block().createMessage(msg.build()).block();
 
-			// Acknowledge interaction
-			return event.deferEdit();
+			// Delete original reply
+			return event.deleteReply();
 		}
 
 		}

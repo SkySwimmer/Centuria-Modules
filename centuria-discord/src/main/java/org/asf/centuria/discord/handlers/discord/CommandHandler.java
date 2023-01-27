@@ -186,9 +186,10 @@ public class CommandHandler {
 					code = Long.toString(rnd.nextLong(), 16);
 				}
 				SendMessage.clearanceCodes.add(code);
+				event.deferReply().block();
 				EventBus.getInstance().dispatchEvent(new MiscModerationEvent("clearancecode.generated",
 						"Admin Clearance Code Generated", Map.of(), modacc.getAccountID(), null));
-				event.reply("Clearance code generated: " + code + "\nIt will expire in 2 minutes.").block();
+				event.editReply("Clearance code generated: " + code + "\nIt will expire in 2 minutes.").block();
 				final String cFinal = code;
 				Thread th = new Thread(() -> {
 					for (int i = 0; i < 12000; i++) {
@@ -317,11 +318,14 @@ public class CommandHandler {
 
 				// Kick
 				if (params.size() == 1) {
-					event.reply("Kicked player " + acc.getDisplayName()).block();
+					event.deferReply().block();
 					acc.kick(modacc.getAccountID(), null);
+					event.editReply("Kicked player " + acc.getDisplayName()).block();
 				} else if (params.size() == 2) {
-					event.reply("Kicked player " + acc.getDisplayName() + ": " + params.get(1).value().get()).block();
+					event.deferReply().block();
 					acc.kick(modacc.getAccountID(), params.get(1).value().get());
+					event.editReply("Kicked player " + acc.getDisplayName() + ": " + params.get(1).value().get())
+							.block();
 				}
 				break;
 			}
@@ -380,11 +384,14 @@ public class CommandHandler {
 
 				// Ban
 				if (params.size() == 1) {
-					event.reply("Banned player " + acc.getDisplayName()).block();
+					event.deferReply().block();
 					acc.ban(modacc.getAccountID(), null);
+					event.editReply("Banned player " + acc.getDisplayName()).block();
 				} else if (params.size() == 2) {
-					event.reply("Banned player " + acc.getDisplayName() + ": " + params.get(1).value().get()).block();
+					event.deferReply().block();
 					acc.ban(modacc.getAccountID(), params.get(1).value().get());
+					event.editReply("Banned player " + acc.getDisplayName() + ": " + params.get(1).value().get())
+							.block();
 				}
 				break;
 			}
@@ -443,14 +450,16 @@ public class CommandHandler {
 
 				// Tempban
 				if (params.size() == 2) {
-					event.reply("Temporarily banned player " + acc.getDisplayName()).block();
+					event.deferReply().block();
 					acc.tempban(Integer.valueOf(params.get(1).value().get()), modacc.getAccountID(), null);
+					event.editReply("Temporarily banned player " + acc.getDisplayName()).block();
 				} else if (params.size() == 3) {
-					event.reply(
-							"Temporarily banned player " + acc.getDisplayName() + ": " + params.get(2).value().get())
-							.block();
+					event.deferReply().block();
 					acc.tempban(Integer.valueOf(params.get(1).value().get()), modacc.getAccountID(),
 							params.get(2).value().get());
+					event.editReply(
+							"Temporarily banned player " + acc.getDisplayName() + ": " + params.get(2).value().get())
+							.block();
 				}
 				break;
 			}
@@ -509,11 +518,13 @@ public class CommandHandler {
 
 				// Pardon
 				if (params.size() == 1) {
-					event.reply("Pardoned player " + acc.getDisplayName()).block();
+					event.deferReply().block();
 					acc.pardon(modacc.getAccountID(), null);
+					event.editReply("Pardoned player " + acc.getDisplayName()).block();
 				} else if (params.size() == 2) {
-					event.reply("Pardoned player " + acc.getDisplayName()).block();
+					event.deferReply().block();
 					acc.pardon(modacc.getAccountID(), params.get(1).value().get());
+					event.editReply("Pardoned player " + acc.getDisplayName()).block();
 				}
 				break;
 			}
@@ -528,8 +539,8 @@ public class CommandHandler {
 
 				String permLevel = "member";
 				if (acc.getSaveSharedInventory().containsItem("permissions")) {
-					permLevel = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
-							.getAsString();
+					permLevel = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
 					event.reply("**Error:** no Centuria moderator permissions.").block();
@@ -582,8 +593,8 @@ public class CommandHandler {
 				}
 				String permLevel = "member";
 				if (acc.getSaveSharedInventory().containsItem("permissions")) {
-					permLevel = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
-							.getAsString();
+					permLevel = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
 					event.reply("**Error:** no Centuria administrative permissions.").block();
@@ -637,9 +648,8 @@ public class CommandHandler {
 				}
 				String permLevel = "member";
 				if (acc.getSaveSharedInventory().containsItem("permissions")) {
-					permLevel = acc
-							.getSaveSharedInventory().getItem("permissions").getAsJsonObject().get("permissionLevel")
-							.getAsString();
+					permLevel = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
 					event.reply("**Error:** no Centuria administrative permissions.").block();

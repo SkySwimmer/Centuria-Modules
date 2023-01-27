@@ -171,7 +171,7 @@ public class ModuleCommands implements IEventReceiver {
 			}
 
 			// Remove connection
-			ev.respond("Attempting to unpair account... Please wait...");
+			ev.respond("Attempting to unpair your account... Please wait...");
 			LinkUtils.unpairAccount(ev.getAccount(),
 					((InetSocketAddress) ev.getClient().getSocket().getRemoteSocketAddress()).getAddress()
 							.getHostAddress(),

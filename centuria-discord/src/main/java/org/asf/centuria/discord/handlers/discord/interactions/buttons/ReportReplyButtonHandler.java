@@ -28,7 +28,7 @@ public class ReportReplyButtonHandler {
 		if (acc != null) {
 			String mode = id.split("/")[2];
 
-			// Show appeal form
+			// Show form
 			InteractionPresentModalSpec.Builder modal = InteractionPresentModalSpec.builder();
 			modal.title("Send a message to Report " + (mode.equals("tosender") ? "Sender" : "Subject"));
 			modal.customId("reportreply/" + acc.getAccountID() + "/" + mode);

@@ -31,6 +31,7 @@ import discord4j.core.object.component.SelectMenu.Option;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec;
+import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.discordjson.json.ApplicationCommandInteractionData;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.rest.util.Permission;
@@ -77,6 +78,18 @@ public class CommandHandler {
 				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
 						.type(ApplicationCommandOption.Type.STRING.getValue())
 						.description("Player to retrieve the Discord account details from").required(true).build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The player DM
+	 */
+	public static ApplicationCommandOptionData dmAnonymous() {
+		return ApplicationCommandOptionData.builder().name("dmanonymous")
+				.description("DMs players anonymously for moderation")
+				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player to DM")
+						.required(true).build())
 				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
 	}
 
@@ -727,6 +740,47 @@ public class CommandHandler {
 				}
 
 				return event.reply("Made " + acc.getDisplayName() + " admin.");
+			}
+			case "dmanonymous": {
+				// Required permissions: mod (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "moderator")) {
+					event.reply("**Error:** no Centuria moderator permissions.").block();
+					return Mono.empty();
+				}
+
+				// Find player UUID
+				var params = data.options().get().get(0).options().get();
+				String uuid = AccountManager.getInstance().getUserByDisplayName(params.get(0).value().get());
+				if (uuid == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				CenturiaAccount acc = AccountManager.getInstance().getAccount(uuid);
+				if (acc == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+
+				// Show form
+				InteractionPresentModalSpec.Builder modal = InteractionPresentModalSpec.builder();
+				modal.title("Send a anonymous message to player...");
+				modal.customId("reportreply/" + acc.getAccountID() + "/tosubject");
+				modal.addComponent(ActionRow.of(TextInput.paragraph("reply", "Message to send")));
+				return event.presentModal(modal.build());
 			}
 			case "removeperms": {
 				// Required permissions: admin (ingame)

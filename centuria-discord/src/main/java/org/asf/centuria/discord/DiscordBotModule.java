@@ -164,7 +164,7 @@ public class DiscordBotModule implements ICenturiaModule {
 					.addOption(CommandHandler.pardon()).addOption(CommandHandler.generateClearanceCode())
 					.addOption(CommandHandler.mute()).addOption(CommandHandler.ipBan())
 					.addOption(CommandHandler.makeModerator()).addOption(CommandHandler.makeAdmin())
-					.addOption(CommandHandler.removePerms()).build();
+					.addOption(CommandHandler.removePerms()).addOption(CommandHandler.dmAnonymous()).build();
 
 			// Connect
 			client.gateway().setEnabledIntents(IntentSet.of(Intent.GUILD_PRESENCES, Intent.GUILD_MESSAGES,

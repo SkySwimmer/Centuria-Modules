@@ -63,7 +63,7 @@ public class ModerationHandlers implements IEventReceiver {
 				message += "\n";
 				if (ev.isPermanent()) {
 					message += "This is a permanent ban, you can attempt to appeal by pressing the button below.\n"
-							+ "Due to this being a permanent ban, you receive a singleplayer launcher with your data. However note that you will not be able to play with others, multiplayer is completely disabled.";
+							+ "Due to this being a permanent ban, you receive a singleplayer launcher with your data. However note that you will not be able to play with others, multiplayer is completely disabled.\n\nNote that if you have no mutual servers with the bot you cannot download the launcher, use the website if you are banned from the Discord server to obtain your data.";
 				} else
 					message += "This is a temporary ban, you cannot log on for " + ev.getDays() + " days.";
 

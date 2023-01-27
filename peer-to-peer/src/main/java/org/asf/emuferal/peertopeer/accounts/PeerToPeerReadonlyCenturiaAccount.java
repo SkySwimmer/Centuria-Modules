@@ -4,6 +4,8 @@ import org.asf.centuria.Centuria;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.accounts.LevelInfo;
 import org.asf.centuria.accounts.PlayerInventory;
+import org.asf.centuria.accounts.SaveManager;
+import org.asf.centuria.accounts.SaveMode;
 import org.asf.centuria.accounts.impl.LevelManager;
 import org.asf.centuria.entities.players.Player;
 import org.asf.emuferal.peertopeer.players.P2PPlayer;
@@ -12,11 +14,17 @@ import com.google.gson.JsonObject;
 
 public class PeerToPeerReadonlyCenturiaAccount extends CenturiaAccount {
 
+	private PlayerInventory mainInv;
+	private PlayerInventory sharedInv;
+
 	private P2PPlayer player;
 	private LevelManager level;
 
 	public PeerToPeerReadonlyCenturiaAccount(P2PPlayer player) {
 		this.player = player;
+
+		mainInv = new PeerToPeerPlayerInventory(player, false);
+		sharedInv = new PeerToPeerPlayerInventory(player, true);
 	}
 
 	@Override
@@ -48,7 +56,7 @@ public class PeerToPeerReadonlyCenturiaAccount extends CenturiaAccount {
 
 		return level;
 	}
-	
+
 	@Override
 	public Player getOnlinePlayerInstance() {
 		return Centuria.gameServer.getPlayer(getAccountID());
@@ -119,8 +127,33 @@ public class PeerToPeerReadonlyCenturiaAccount extends CenturiaAccount {
 	}
 
 	@Override
-	public PlayerInventory getPlayerInventory() {
-		return new PeerToPeerPlayerInventory(player);
+	public SaveManager getSaveManager() throws IllegalArgumentException {
+		throw new IllegalArgumentException("Peer-to-peer mode");
+	}
+
+	@Override
+	public SaveMode getSaveMode() {
+		return SaveMode.SINGLE;
+	}
+
+	@Override
+	public PlayerInventory getSaveSharedInventory() {
+		return sharedInv;
+	}
+
+	@Override
+	public PlayerInventory getSaveSpecificInventory() {
+		return mainInv;
+	}
+
+	@Override
+	public void migrateSaveDataToManagedMode() throws IllegalArgumentException {
+		throw new IllegalArgumentException("Peer-to-peer mode");
+	}
+
+	@Override
+	public boolean updateLoginName(String arg0) {
+		return false;
 	}
 
 }

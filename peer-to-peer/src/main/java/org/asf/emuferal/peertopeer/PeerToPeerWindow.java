@@ -71,9 +71,7 @@ public class PeerToPeerWindow {
 		btnNewButton = new JButton("Connect to room");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				try {
-					UUID.fromString(textField.getText());
-				} catch (Exception e2) {
+				if (textField.getText().length() < 3 || textField.getText().length() > 25) {
 					JOptionPane.showMessageDialog(frame, "Not a valid room ID", "Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
@@ -126,13 +124,13 @@ public class PeerToPeerWindow {
 					}
 
 					@Override
-					public void addListDataListener(ListDataListener l) {						
+					public void addListDataListener(ListDataListener l) {
 					}
 
 					@Override
-					public void removeListDataListener(ListDataListener l) {						
+					public void removeListDataListener(ListDataListener l) {
 					}
-					
+
 				});
 			});
 		});
@@ -183,14 +181,13 @@ public class PeerToPeerWindow {
 
 		try {
 			// Establish new connection
-			connector = new NexusClientBuilder().autoReconnect().withChannel("emuferal/" + room).build();
+			connector = new NexusClientBuilder().autoReconnect().withChannel("emuferal/v_b_1_5_3+/" + room).build();
 			PeerToPeerModule.connector = connector;
 			connector.addDisconnectionEventHandler(id -> {
 				if (id.equals(connector.getConnectionID()) && !connector.isDisconnecting()) {
 					// Connection loss
 					PeerToPeerModule.onDisconnect();
-				}
-				else
+				} else
 					PeerToPeerModule.onDisconnect(id);
 				if (id.equals(connector.getConnectionID()))
 					btnNewButton.setEnabled(false);
@@ -202,7 +199,7 @@ public class PeerToPeerWindow {
 				}
 			});
 			connector.addDirectPacketEventHandler(packet -> {
-				PeerToPeerModule.handleNexusPacket(packet);				
+				PeerToPeerModule.handleNexusPacket(packet);
 			});
 			connector.addPacketEventHandler(packet -> {
 				PeerToPeerModule.handleNexusPacket(packet);

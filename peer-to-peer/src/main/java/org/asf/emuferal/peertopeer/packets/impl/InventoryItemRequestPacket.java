@@ -16,6 +16,7 @@ public class InventoryItemRequestPacket extends NexusPacket {
 
 	public String id;
 	public String inventory;
+	public boolean saveShared;
 
 	@Override
 	public P2PNexusPacketType type() {
@@ -31,12 +32,14 @@ public class InventoryItemRequestPacket extends NexusPacket {
 	public void parse(PacketReader reader) throws IOException {
 		id = reader.readString();
 		inventory = reader.readString();
+		saveShared = reader.readBoolean();
 	}
 
 	@Override
 	public void write(PacketWriter writer) throws IOException {
 		writer.writeString(id);
 		writer.writeString(inventory);
+		writer.writeBoolean(saveShared);
 	}
 
 	@Override
@@ -55,7 +58,10 @@ public class InventoryItemRequestPacket extends NexusPacket {
 			InventoryItemUpdatePacket res = new InventoryItemUpdatePacket();
 			res.id = id;
 			res.inventory = inventory;
-			res.item = plr.player.account.getPlayerInventory().getItem(inventory).toString();
+			if (saveShared)
+				res.item = plr.player.account.getSaveSharedInventory().getItem(inventory).toString();
+			else
+				res.item = plr.player.account.getSaveSpecificInventory().getItem(inventory).toString();
 			try {
 				packet.reply(res.type().ordinal(), res.build());
 			} catch (IOException e) {

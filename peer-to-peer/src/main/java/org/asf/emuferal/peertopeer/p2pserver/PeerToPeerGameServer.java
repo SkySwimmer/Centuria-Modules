@@ -136,7 +136,7 @@ public class PeerToPeerGameServer extends GameServer {
 
 				// Find player look
 				String look = player.player.activeLook;
-				JsonObject lookData = player.player.account.getPlayerInventory().getAccessor()
+				JsonObject lookData = player.player.account.getSaveSpecificInventory().getAccessor()
 						.findInventoryObject("avatars", look);
 				if (lookData != null) {
 					player.look = lookData.get("components").getAsJsonObject().get("AvatarLook").getAsJsonObject()
@@ -215,7 +215,7 @@ public class PeerToPeerGameServer extends GameServer {
 				// Find player look
 				String look = player.player.activeLook;
 				player.currentLook = player.player.activeLook;
-				JsonObject lookData = player.player.account.getPlayerInventory().getAccessor()
+				JsonObject lookData = player.player.account.getSaveSpecificInventory().getAccessor()
 						.findInventoryObject("avatars", look).get("components").getAsJsonObject().get("AvatarLook")
 						.getAsJsonObject().get("info").getAsJsonObject();
 				if (lookData != null) {

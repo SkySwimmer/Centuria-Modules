@@ -1,6 +1,7 @@
 package org.asf.emuferal.peertopeer.accounts;
 
 import org.asf.centuria.accounts.PlayerInventory;
+import org.asf.centuria.accounts.SaveSettings;
 import org.asf.emuferal.peertopeer.PeerToPeerModule;
 import org.asf.emuferal.peertopeer.packets.impl.InventoryItemRequestPacket;
 import org.asf.emuferal.peertopeer.players.P2PPlayer;
@@ -10,10 +11,18 @@ import com.google.gson.JsonElement;
 
 public class PeerToPeerPlayerInventory extends PlayerInventory {
 
+	private SaveSettings settings;
+	private boolean saveShared;
 	private P2PPlayer player;
 
-	public PeerToPeerPlayerInventory(P2PPlayer player) {
+	public PeerToPeerPlayerInventory(P2PPlayer player, boolean saveShared) {
 		this.player = player;
+		this.saveShared = saveShared;
+
+		// Load save settings
+		settings = new SaveSettings();
+		if (containsItem("savesettings"))
+			settings.load(getItem("savesettings").getAsJsonObject());
 	}
 
 	@Override
@@ -35,6 +44,7 @@ public class PeerToPeerPlayerInventory extends PlayerInventory {
 			InventoryItemRequestPacket pk = new InventoryItemRequestPacket();
 			pk.id = player.id;
 			pk.inventory = item;
+			pk.saveShared = saveShared;
 			PeerToPeerModule.sendNexusPacket(pk);
 
 			// Wait
@@ -63,6 +73,7 @@ public class PeerToPeerPlayerInventory extends PlayerInventory {
 			InventoryItemRequestPacket pk = new InventoryItemRequestPacket();
 			pk.id = player.id;
 			pk.inventory = item;
+			pk.saveShared = saveShared;
 			PeerToPeerModule.sendNexusPacket(pk);
 
 			// Wait
@@ -81,6 +92,16 @@ public class PeerToPeerPlayerInventory extends PlayerInventory {
 		if (item.matches("^[0-9]+$"))
 			return new JsonArray();
 		return null;
+	}
+
+	@Override
+	public SaveSettings getSaveSettings() {
+		return settings;
+	}
+
+	@Override
+	public void writeSaveSettings() {
+		setItem("savesettings", settings.writeToObject());
 	}
 
 }

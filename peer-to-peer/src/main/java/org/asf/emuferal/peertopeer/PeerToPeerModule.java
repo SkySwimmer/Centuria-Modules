@@ -434,9 +434,9 @@ public class PeerToPeerModule implements ICenturiaModule {
 		plr.id = event.getAccount().getAccountID();
 		plr.displayName = event.getAccount().getDisplayName();
 		plr.isLocal = true;
-		if (plr.player.account.getPlayerInventory().getSanctuaryAccessor()
+		if (plr.player.account.getSaveSpecificInventory().getSanctuaryAccessor()
 				.getSanctuaryLook(plr.player.account.getActiveSanctuaryLook()) == null) {
-			if (plr.player.account.getPlayerInventory().getSanctuaryAccessor().getFirstSanctuaryLook() == null) {
+			if (plr.player.account.getSaveSpecificInventory().getSanctuaryAccessor().getFirstSanctuaryLook() == null) {
 				// Simulate ILT
 				InventoryItemDownloadPacket pkt = new InventoryItemDownloadPacket();
 				try {
@@ -447,7 +447,7 @@ public class PeerToPeerModule implements ICenturiaModule {
 					e.printStackTrace();
 				}
 			}
-			plr.player.activeSanctuaryLook = plr.player.account.getPlayerInventory().getSanctuaryAccessor()
+			plr.player.activeSanctuaryLook = plr.player.account.getSaveSpecificInventory().getSanctuaryAccessor()
 					.getFirstSanctuaryLook().get("id").getAsString();
 			plr.player.account.setActiveSanctuaryLook(plr.player.activeSanctuaryLook);
 		} else

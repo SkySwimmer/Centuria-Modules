@@ -82,7 +82,7 @@ public class PeerToPeerAccountManager extends AccountManager {
 	}
 
 	@Override
-	public CenturiaAccount getAccount(String id) {		
+	public CenturiaAccount getAccount(String id) {
 		// Find P2P player
 		P2PPlayer player = PeerToPeerModule.getPlayer(id);
 		if (player != null && !player.isLocal)
@@ -91,12 +91,17 @@ public class PeerToPeerAccountManager extends AccountManager {
 	}
 
 	@Override
-	public String getUserByDisplayName(String name) {		
+	public String getUserByDisplayName(String name) {
 		// Find P2P player
 		P2PPlayer player = PeerToPeerModule.getByDisplayName(name);
 		if (player != null && !player.isLocal)
-			return player.id;		
+			return player.id;
 		return manager.getUserByDisplayName(name);
+	}
+
+	@Override
+	public void releaseLoginName(String name) {
+		manager.releaseDisplayName(name);
 	}
 
 }

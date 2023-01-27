@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.accounts.PlayerInventory;
 import org.asf.centuria.accounts.SaveMode;
@@ -909,6 +910,7 @@ public class ApplicationManager {
 							if (!account.getSaveManager().switchSave(name))
 								throw new IOException("Save switch failure");
 							account.kickDirect("SYSTEM", "Save data switched");
+							account = AccountManager.getInstance().getAccount(account.getAccountID());
 
 							// Change settigns
 							account.getSaveSpecificInventory().getSaveSettings().load(settings);
@@ -951,6 +953,7 @@ public class ApplicationManager {
 							if (!account.getSaveManager().switchSave(name))
 								throw new IOException("Save switch failure");
 							account.kickDirect("SYSTEM", "Save data switched");
+							account = AccountManager.getInstance().getAccount(account.getAccountID());
 
 							// Change settigns
 							account.getSaveSpecificInventory().getSaveSettings().load(settings);
@@ -993,6 +996,7 @@ public class ApplicationManager {
 							if (!account.getSaveManager().switchSave(name))
 								throw new IOException("Save switch failure");
 							account.kickDirect("SYSTEM", "Save data switched");
+							account = AccountManager.getInstance().getAccount(account.getAccountID());
 
 							// Change settigns
 							account.getSaveSpecificInventory().getSaveSettings().load(settings);
@@ -1068,6 +1072,7 @@ public class ApplicationManager {
 							if (!account.getSaveManager().switchSave(name))
 								throw new IOException("Save switch failure");
 							account.kickDirect("SYSTEM", "Save data switched");
+							account = AccountManager.getInstance().getAccount(account.getAccountID());
 						}
 
 						// Move to next
@@ -1316,6 +1321,7 @@ public class ApplicationManager {
 						if (!account.getSaveManager().switchSave(name))
 							throw new IOException("Save switch failure");
 						account.kickDirect("SYSTEM", "Save data switched");
+						account = AccountManager.getInstance().getAccount(account.getAccountID());
 
 						// Change settigns
 						account.getSaveSpecificInventory().getSaveSettings().load(settings);
@@ -1356,6 +1362,7 @@ public class ApplicationManager {
 						if (!account.getSaveManager().switchSave(name))
 							throw new IOException("Save switch failure");
 						account.kickDirect("SYSTEM", "Save data switched");
+						account = AccountManager.getInstance().getAccount(account.getAccountID());
 
 						// Change settigns
 						account.getSaveSpecificInventory().getSaveSettings().load(settings);
@@ -1396,6 +1403,7 @@ public class ApplicationManager {
 						if (!account.getSaveManager().switchSave(name))
 							throw new IOException("Save switch failure");
 						account.kickDirect("SYSTEM", "Save data switched");
+						account = AccountManager.getInstance().getAccount(account.getAccountID());
 
 						// Change settigns
 						account.getSaveSpecificInventory().getSaveSettings().load(settings);
@@ -1465,6 +1473,7 @@ public class ApplicationManager {
 						if (!account.getSaveManager().switchSave(name))
 							throw new IOException("Save switch failure");
 						account.kickDirect("SYSTEM", "Save data switched");
+						account = AccountManager.getInstance().getAccount(account.getAccountID());
 					}
 					break;
 				}

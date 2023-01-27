@@ -126,12 +126,29 @@ public class AccountPanelHandler {
 				msg.addEmbed(embed.build());
 
 				// Dropdown
-				msg.addComponent(
-						ActionRow.of(SelectMenu.of("accountoption", Option.of("Change display name", "displayname"),
-								Option.of("Enable/disable 2-factor authentication", "2fa"),
-								Option.of("Forgot password", "forgotpassword"),
-								Option.of("Forgot login name", "forgotloginname"),
-								Option.of("Download your account inventory (including avatars)", "downloaddata"))));
+				if (account.getSaveMode() == SaveMode.SINGLE)
+					msg.addComponent(
+							ActionRow.of(SelectMenu.of("accountoption", Option.of("Change display name", "displayname"),
+									Option.of("Change login name", "loginname"),
+									Option.of("Enable/disable 2-factor authentication", "2fa"),
+									Option.of("Forgot/change password", "forgotpassword"),
+									Option.of("Forgot login name", "forgotloginname"),
+									Option.of("Download your account inventory (including avatars)", "downloaddata"),
+									Option.of("Migrate to Managed Save Data", "migrate"),
+									Option.of("Permanently delete account", "deleteaccount"))));
+				else
+					msg.addComponent(
+							ActionRow.of(SelectMenu.of("accountoption", Option.of("Change display name", "displayname"),
+									Option.of("Change login name", "loginname"),
+									Option.of("Enable/disable 2-factor authentication", "2fa"),
+									Option.of("Forgot/change password", "forgotpassword"),
+									Option.of("Forgot login name", "forgotloginname"),
+									Option.of("Download your account inventory (including avatars)", "downloaddata"),
+									Option.of(
+											"Select active save (currently "
+													+ account.getSaveManager().getCurrentActiveSave() + ")",
+											"selectsave"),
+									Option.of("Permanently delete account", "deleteaccount"))));
 
 				// DM the message
 				event.getInteraction().getUser().getPrivateChannel().block().createMessage(msg.build()).block();

@@ -4,10 +4,12 @@ import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
 import org.asf.centuria.discord.handlers.discord.interactions.forms.AppealHandler;
+import org.asf.centuria.discord.handlers.discord.interactions.forms.DeleteAccountHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.forms.FeedbackReplyHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.forms.RegistrationHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.forms.ReportReplyHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.forms.UpdateDisplayNameHandler;
+import org.asf.centuria.discord.handlers.discord.interactions.forms.UpdateLoginNameHandler;
 import org.asf.centuria.networking.gameserver.GameServer;
 
 import discord4j.core.GatewayDiscordClient;
@@ -36,6 +38,10 @@ public class InteractionModalHandler {
 			return event.deferEdit();
 		} else if (id.equals("updatedisplayname")) {
 			return UpdateDisplayNameHandler.handle(id, event, gateway);
+		} else if (id.equals("updateloginname")) {
+			return UpdateLoginNameHandler.handle(id, event, gateway);
+		} else if (id.equals("deleteaccount")) {
+			return DeleteAccountHandler.handle(id, event, gateway);
 		} else if (id.equals("accountregistration")) {
 			return RegistrationHandler.handle(id, event, gateway);
 		} else if (id.equals("appealform")) {

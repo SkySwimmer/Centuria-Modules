@@ -48,11 +48,28 @@ public class AccountOptionsMenuHandler {
 			return Mono.empty();
 
 		// Reset selection
-		event.getMessage().get().edit().withComponents(ActionRow.of(SelectMenu.of("accountoption",
-				Option.of("Change display name", "displayname"),
-				Option.of("Enable/disable 2-factor authentication", "2fa"),
-				Option.of("Forgot password", "forgotpassword"), Option.of("Forgot login name", "forgotloginname"),
-				Option.of("Download your account inventory (including avatars)", "downloaddata")))).subscribe();
+		if (account.getSaveMode() == SaveMode.SINGLE)
+			event.getMessage().get().edit().withComponents(ActionRow.of(SelectMenu.of("accountoption",
+					Option.of("Change display name", "displayname"), Option.of("Change login name", "loginname"),
+					Option.of("Enable/disable 2-factor authentication", "2fa"),
+					Option.of("Forgot/change password", "forgotpassword"),
+					Option.of("Forgot login name", "forgotloginname"),
+					Option.of("Download your account inventory (including avatars)", "downloaddata"),
+					Option.of("Migrate to Managed Save Data", "migrate"),
+					Option.of("Permanently delete account", "deleteaccount")))).subscribe();
+		else
+			event.getMessage().get().edit()
+					.withComponents(ActionRow.of(SelectMenu.of("accountoption",
+							Option.of("Change display name", "displayname"),
+							Option.of("Change login name", "loginname"),
+							Option.of("Enable/disable 2-factor authentication", "2fa"),
+							Option.of("Forgot/change password", "forgotpassword"),
+							Option.of("Forgot login name", "forgotloginname"),
+							Option.of("Download your account inventory (including avatars)", "downloaddata"),
+							Option.of("Select active save (currently " + account.getSaveManager().getCurrentActiveSave()
+									+ ")", "selectsave"),
+							Option.of("Permanently delete account", "deleteaccount"))))
+					.subscribe();
 
 		// Handle request
 		switch (option) {
@@ -65,6 +82,33 @@ public class AccountOptionsMenuHandler {
 			modal.addComponent(ActionRow.of(TextInput.small("displayname", "New display name", 2, 16).required()
 					.prefilled(account.getDisplayName())));
 			modal.customId("updatedisplayname");
+
+			// Show form
+			return event.presentModal(modal.build());
+		}
+
+		// Login name
+		case "loginname": {
+			// Show login name change form
+			InteractionPresentModalSpec.Builder modal = InteractionPresentModalSpec.builder();
+			modal.title("Update login name");
+			modal.addComponent(ActionRow.of(TextInput.small("oldname", "Old login name", 1, 320).required()));
+			modal.addComponent(ActionRow.of(TextInput.small("newname", "New login name", 1, 320).required()));
+			modal.addComponent(ActionRow.of(TextInput.small("confirmname", "Confirm login name", 1, 320).required()));
+			modal.customId("updateloginname");
+
+			// Show form
+			return event.presentModal(modal.build());
+		}
+
+		// Account deletion
+		case "deleteaccount": {
+			// Show delete confirm form
+			InteractionPresentModalSpec.Builder modal = InteractionPresentModalSpec.builder();
+			modal.title("Delete your account");
+			modal.addComponent(ActionRow
+					.of(TextInput.small("confirm", "Confirm with 'Yes, fully delete my account!'").required()));
+			modal.customId("deleteaccount");
 
 			// Show form
 			return event.presentModal(modal.build());

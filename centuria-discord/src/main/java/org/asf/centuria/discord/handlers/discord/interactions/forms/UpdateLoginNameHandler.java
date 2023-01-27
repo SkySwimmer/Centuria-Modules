@@ -13,7 +13,7 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import reactor.core.publisher.Mono;
 
-public class UpdateDisplayNameHandler {
+public class UpdateLoginNameHandler {
 
 	private static String[] nameBlacklist = new String[] { "kit", "kitsendragn", "kitsendragon", "fera", "fero",
 			"wwadmin", "ayli", "komodorihero", "wwsam", "blinky", "fer.ocity" };
@@ -64,7 +64,7 @@ public class UpdateDisplayNameHandler {
 	}
 
 	/**
-	 * Handles the 'update display name' form submission event
+	 * Handles the 'update login name' form submission event
 	 * 
 	 * @param event   Modal submission event
 	 * @param gateway Discord client
@@ -72,7 +72,11 @@ public class UpdateDisplayNameHandler {
 	 */
 	public static Mono<?> handle(String id, ModalSubmitInteractionEvent event, GatewayDiscordClient gateway) {
 		// Load fields
-		String newName = event.getInteraction().getData().data().get().components().get().get(0).components().get()
+		String oldName = event.getInteraction().getData().data().get().components().get().get(0).components().get()
+				.get(0).value().get();
+		String username = event.getInteraction().getData().data().get().components().get().get(1).components().get()
+				.get(0).value().get();
+		String confirm = event.getInteraction().getData().data().get().components().get().get(2).components().get()
 				.get(0).value().get();
 
 		// Load account manager
@@ -86,44 +90,49 @@ public class UpdateDisplayNameHandler {
 		if (account == null)
 			return Mono.empty();
 
-		// Verify name validity
-		if (!newName.matches("^[0-9A-Za-z\\-_. ]+") || newName.length() > 16 || newName.length() < 2) {
+		// Verify old name
+		if (!oldName.equals(account.getLoginName())) {
 			// Reply with error
-			return event.reply("Invalid display name.");
+			return event.reply("Old login name does not match.");
 		}
 
-		// Verify name blacklist
-		for (String name : nameBlacklist) {
-			if (newName.equalsIgnoreCase(name)) {
-				// Reply with error
-				return event.reply("Invalid display name: this name may not be used.").withEphemeral(true);
-			}
-		}
-
-		// Verify name with filters
-		for (String word : newName.split(" ")) {
-			if (muteWords.contains(word.replaceAll("[^A-Za-z0-9]", "").toLowerCase())) {
-				// Reply with error
-				return event.reply("Invalid display name: this name may not be used.").withEphemeral(true);
-			}
-
-			if (filterWords.contains(word.replaceAll("[^A-Za-z0-9]", "").toLowerCase())) {
-				// Reply with error
-				return event.reply("Invalid display name: this name may not be used.").withEphemeral(true);
-			}
+		// Verify new name
+		if (!username.equals(confirm)) {
+			// Reply with error
+			return event
+					.reply("Login name confirmation failed, please make sure the name matches the confirmation box.");
 		}
 
 		// Check if the name is in use
-		if (manager.isDisplayNameInUse(newName)) {
+		if (manager.getUserByLoginName(username) != null) {
 			// Reply with error
-			return event.reply("Selected display name is already in use.");
+			return event.reply("Selected login name is already in use.");
 		}
 
-		// Update display name
-		manager.releaseDisplayName(account.getDisplayName());
-		account.updateDisplayName(newName);
-		manager.lockDisplayName(newName, account.getAccountID());
-		account.kickDirect("SYSTEM", "Display name changed");
-		return event.reply("Display name updated successfully.");
+		if (!account.updateLoginName(username)) {
+			// Prevent banned and filtered words
+			for (String word : username.split(" ")) {
+				if (muteWords.contains(word.replaceAll("[^A-Za-z0-9]", "").toLowerCase())) {
+					return event.reply("Selected login name was rejected as it may not be appropriate.");
+				}
+
+				if (filterWords.contains(word.replaceAll("[^A-Za-z0-9]", "").toLowerCase())) {
+					return event.reply("Selected login name was rejected as it may not be appropriate.");
+				}
+			}
+
+			// Prevent blacklisted names from being used
+			for (String name : nameBlacklist) {
+				if (username.equalsIgnoreCase(name))
+					return event.reply("Selected login name was rejected as it may not be appropriate.");
+			}
+
+			// Failed
+			return event.reply("Selected login name is invalid.");
+		}
+
+		// Update login name
+		manager.releaseLoginName(oldName);
+		return event.reply("Login name updated successfully.");
 	}
 }

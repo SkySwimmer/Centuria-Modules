@@ -1,18 +1,25 @@
 package org.asf.centuria.discord.handlers.discord;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Map;
 import java.util.Random;
 
+import org.asf.centuria.Centuria;
 import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
+import org.asf.centuria.entities.players.Player;
+import org.asf.centuria.ipbans.IpBanManager;
 import org.asf.centuria.modules.eventbus.EventBus;
 import org.asf.centuria.modules.events.accounts.MiscModerationEvent;
+import org.asf.centuria.networking.chatserver.ChatClient;
 import org.asf.centuria.networking.chatserver.networking.SendMessage;
 import org.asf.centuria.networking.gameserver.GameServer;
+
+import com.google.gson.JsonObject;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
@@ -87,6 +94,40 @@ public class CommandHandler {
 	}
 
 	/**
+	 * The account makemoderator command
+	 */
+	public static ApplicationCommandOptionData makeModerator() {
+		return ApplicationCommandOptionData.builder().name("makemoderator").description("Makes a player moderator")
+				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player to promote")
+						.required(true).build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The account makeadmin command
+	 */
+	public static ApplicationCommandOptionData makeAdmin() {
+		return ApplicationCommandOptionData.builder().name("makeadmin").description("Makes a player admin")
+				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player to promote")
+						.required(true).build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The account removeperms command
+	 */
+	public static ApplicationCommandOptionData removePerms() {
+		return ApplicationCommandOptionData.builder().name("removeperms")
+				.description("Removes permissions from a player")
+				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player to demote")
+						.required(true).build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
 	 * The account ban command
 	 */
 	public static ApplicationCommandOptionData ban() {
@@ -96,6 +137,30 @@ public class CommandHandler {
 						.required(true).build())
 				.addOption(ApplicationCommandOptionData.builder().name("reason")
 						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Ban reason").build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The account ipban command
+	 */
+	public static ApplicationCommandOptionData ipBan() {
+		return ApplicationCommandOptionData.builder().name("ipban").description("IP-bans a player")
+				.addOption(ApplicationCommandOptionData.builder().name("target")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player name or IP to ban")
+						.required(true).build())
+				.addOption(ApplicationCommandOptionData.builder().name("reason")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Ban reason").build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The account pardonip command
+	 */
+	public static ApplicationCommandOptionData pardonIP() {
+		return ApplicationCommandOptionData.builder().name("pardonip").description("Pardons a IP")
+				.addOption(ApplicationCommandOptionData.builder().name("ip")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("IP address to pardon")
+						.required(true).build())
 				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
 	}
 
@@ -112,6 +177,28 @@ public class CommandHandler {
 						.description("Days to ban the player for").required(true).build())
 				.addOption(ApplicationCommandOptionData.builder().name("reason")
 						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Ban reason").build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The account mute command
+	 */
+	public static ApplicationCommandOptionData mute() {
+		return ApplicationCommandOptionData.builder().name("mute").description("Mutes a player")
+				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player to mute")
+						.required(true).build())
+				.addOption(ApplicationCommandOptionData.builder().name("minutes")
+						.type(ApplicationCommandOption.Type.INTEGER.getValue())
+						.description("Minutes to mute the player for").build())
+				.addOption(ApplicationCommandOptionData.builder().name("hours")
+						.type(ApplicationCommandOption.Type.INTEGER.getValue())
+						.description("Hours to mute the player for").build())
+				.addOption(ApplicationCommandOptionData.builder().name("days")
+						.type(ApplicationCommandOption.Type.INTEGER.getValue())
+						.description("Days to mute the player for").build())
+				.addOption(ApplicationCommandOptionData.builder().name("reason")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Mute reason").build())
 				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
 	}
 
@@ -395,6 +482,320 @@ public class CommandHandler {
 				}
 				break;
 			}
+			case "pardonip": {
+				// Required permissions: admin (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "admin")) {
+					event.reply("**Error:** no Centuria admin permissions.").block();
+					return Mono.empty();
+				}
+
+				// Check ip ban
+				var params = data.options().get().get(0).options().get();
+				String target = params.get(0).value().get();
+				IpBanManager manager = IpBanManager.getInstance();
+				if (manager.isIPBanned(target)) {
+					manager.unbanIP(target);
+					return event.reply("Pardoned IP: ||" + target + "||");
+				}
+
+				return event.reply("That IP has not been banned");
+			}
+			case "ipban": {
+				// Required permissions: admin (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "admin")) {
+					event.reply("**Error:** no Centuria admin permissions.").block();
+					return Mono.empty();
+				}
+
+				// Find player
+				var params = data.options().get().get(0).options().get();
+				String target = params.get(0).value().get();
+				for (Player plr : Centuria.gameServer.getPlayers()) {
+					if (plr.account.getDisplayName().equals(target)) {
+						// Check rank
+						if (plr.account.getSaveSharedInventory().containsItem("permissions")) {
+							if ((GameServer
+									.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+											.get("permissionLevel").getAsString(), "developer")
+									&& !GameServer.hasPerm(permLevel, "developer"))
+									|| GameServer.hasPerm(modacc.getSaveSharedInventory().getItem("permissions")
+											.getAsJsonObject().get("permissionLevel").getAsString(), "admin")
+											&& !GameServer.hasPerm(permLevel, "admin")) {
+								event.reply("**Error:** unable to moderate higher-ranking members.").block();
+								return Mono.empty();
+							}
+						}
+
+						// Ban
+						if (params.size() == 1) {
+							String addr = plr.client.getAddress();
+							event.deferReply().block();
+							plr.account.ipban(modacc.getAccountID(), null);
+							return event.editReply("IP-banned player " + plr.account.getDisplayName() + "\nIP was: ||"
+									+ addr + "|| (save this as pardoning can only be done by IP)");
+						} else if (params.size() == 2) {
+							event.deferReply().block();
+							String addr = plr.client.getAddress();
+							plr.account.ipban(modacc.getAccountID(), params.get(1).value().get());
+							return event.editReply("IP-banned player " + plr.account.getDisplayName() + ": "
+									+ params.get(1).value().get() + "\nIP was: ||" + addr
+									+ "|| (save this as pardoning can only be done by IP)");
+						}
+					}
+				}
+
+				// Check if the inputted address is a IP address
+				try {
+					InetAddress.getByName(target);
+
+					// Ban the IP
+					event.deferReply().block();
+					IpBanManager.getInstance().banIP(target);
+
+					// Disconnect all with the given IP address (or attempt to)
+					for (Player plr : Centuria.gameServer.getPlayers()) {
+						// Get IP of player
+						if (plr.client.getAddress().equals(target)) {
+							// Ban player
+							if (params.size() == 1)
+								plr.account.ban(modacc.getAccountID(), null);
+							else
+								plr.account.ban(modacc.getAccountID(), params.get(1).value().get());
+						}
+					}
+
+					// Log completion
+					return event
+							.editReply("Banned IP: ||" + target + "|| (save this as pardoning can only be done by IP)");
+				} catch (Exception e) {
+				}
+
+				return event.editReply("**Error:** Player not found");
+			}
+			case "makemoderator": {
+				// Required permissions: admin (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "admin")) {
+					event.reply("**Error:** no Centuria admin permissions.").block();
+					return Mono.empty();
+				}
+
+				// Find player UUID
+				var params = data.options().get().get(0).options().get();
+				String uuid = AccountManager.getInstance().getUserByDisplayName(params.get(0).value().get());
+				if (uuid == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				CenturiaAccount acc = AccountManager.getInstance().getAccount(uuid);
+				if (acc == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+
+				// Check
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					if (GameServer
+							.hasPerm(acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+									.get("permissionLevel").getAsString(), "developer")
+							&& !GameServer.hasPerm(permLevel, "developer")) {
+						return event.reply("Unable to demote higher-ranking users.");
+					}
+				}
+
+				// Make moderator
+				if (!acc.getSaveSharedInventory().containsItem("permissions"))
+					acc.getSaveSharedInventory().setItem("permissions", new JsonObject());
+				if (!acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().has("permissionLevel"))
+					acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().remove("permissionLevel");
+				acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().addProperty("permissionLevel",
+						"moderator");
+				acc.getSaveSharedInventory().setItem("permissions",
+						acc.getSaveSharedInventory().getItem("permissions"));
+
+				// Find online player
+				for (ChatClient plr : Centuria.chatServer.getClients()) {
+					if (plr.getPlayer().getDisplayName().equals(acc.getDisplayName())) {
+						// Update inventory
+						plr.getPlayer().getSaveSharedInventory().setItem("permissions",
+								acc.getSaveSharedInventory().getItem("permissions"));
+						break;
+					}
+				}
+
+				return event.reply("Made " + acc.getDisplayName() + " moderator.");
+			}
+			case "makeadmin": {
+				// Required permissions: admin (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "admin")) {
+					event.reply("**Error:** no Centuria admin permissions.").block();
+					return Mono.empty();
+				}
+
+				// Find player UUID
+				var params = data.options().get().get(0).options().get();
+				String uuid = AccountManager.getInstance().getUserByDisplayName(params.get(0).value().get());
+				if (uuid == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				CenturiaAccount acc = AccountManager.getInstance().getAccount(uuid);
+				if (acc == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+
+				// Check
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					if (GameServer
+							.hasPerm(acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+									.get("permissionLevel").getAsString(), "developer")
+							&& !GameServer.hasPerm(permLevel, "developer")) {
+						return event.reply("Unable to demote higher-ranking users.");
+					}
+				}
+
+				// Make moderator
+				if (!acc.getSaveSharedInventory().containsItem("permissions"))
+					acc.getSaveSharedInventory().setItem("permissions", new JsonObject());
+				if (!acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().has("permissionLevel"))
+					acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().remove("permissionLevel");
+				acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().addProperty("permissionLevel",
+						"admin");
+				acc.getSaveSharedInventory().setItem("permissions",
+						acc.getSaveSharedInventory().getItem("permissions"));
+
+				// Find online player
+				for (ChatClient plr : Centuria.chatServer.getClients()) {
+					if (plr.getPlayer().getDisplayName().equals(acc.getDisplayName())) {
+						// Update inventory
+						plr.getPlayer().getSaveSharedInventory().setItem("permissions",
+								acc.getSaveSharedInventory().getItem("permissions"));
+						break;
+					}
+				}
+
+				return event.reply("Made " + acc.getDisplayName() + " admin.");
+			}
+			case "removeperms": {
+				// Required permissions: admin (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "admin")) {
+					event.reply("**Error:** no Centuria admin permissions.").block();
+					return Mono.empty();
+				}
+
+				// Find player UUID
+				var params = data.options().get().get(0).options().get();
+				String uuid = AccountManager.getInstance().getUserByDisplayName(params.get(0).value().get());
+				if (uuid == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				CenturiaAccount acc = AccountManager.getInstance().getAccount(uuid);
+				if (acc == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+
+				// Check
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					if (GameServer
+							.hasPerm(acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+									.get("permissionLevel").getAsString(), "developer")
+							&& !GameServer.hasPerm(permLevel, "developer")) {
+						return event.reply("Unable to demote higher-ranking users.");
+					}
+				}
+
+				// Remove permissions
+				acc.getSaveSharedInventory().deleteItem("permissions");
+
+				// Find online player
+				for (ChatClient plr : Centuria.chatServer.getClients()) {
+					if (plr.getPlayer().getDisplayName().equals(acc.getDisplayName())) {
+						// Update inventory
+						plr.getPlayer().getSaveSharedInventory().deleteItem("permissions");
+						break;
+					}
+				}
+
+				// Find online player
+				for (Player plr : Centuria.gameServer.getPlayers()) {
+					if (plr.account.getDisplayName().equals(acc.getDisplayName())) {
+						// Update inventory
+						plr.account.getSaveSharedInventory().deleteItem("permissions");
+						plr.hasModPerms = false;
+						break;
+					}
+				}
+
+				return event.reply("Removed permissions from " + acc.getDisplayName());
+			}
 			case "tempban": {
 				// Required permissions: mod (ingame)
 				CenturiaAccount modacc = LinkUtils
@@ -461,6 +862,86 @@ public class CommandHandler {
 							"Temporarily banned player " + acc.getDisplayName() + ": " + params.get(2).value().get())
 							.block();
 				}
+				break;
+			}
+			case "mute": {
+				// Required permissions: mod (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "moderator")) {
+					event.reply("**Error:** no Centuria moderator permissions.").block();
+					return Mono.empty();
+				}
+
+				// Find player UUID
+				var params = data.options().get().get(0).options().get();
+				String uuid = AccountManager.getInstance().getUserByDisplayName(params.get(0).value().get());
+				if (uuid == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				CenturiaAccount acc = AccountManager.getInstance().getAccount(uuid);
+				if (acc == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				if (acc.isBanned()) {
+					event.reply(
+							"**Error:** player is banned, this penalty is higher than a mute and would be overwritten, cancelled.")
+							.block();
+					return Mono.empty();
+				}
+
+				// Check rank
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					if ((GameServer
+							.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+									.get("permissionLevel").getAsString(), "developer")
+							&& !GameServer.hasPerm(permLevel, "developer"))
+							|| GameServer
+									.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+											.get("permissionLevel").getAsString(), "admin")
+									&& !GameServer.hasPerm(permLevel, "admin")) {
+						event.reply("**Error:** unable to moderate higher-ranking members.").block();
+						return Mono.empty();
+					}
+				}
+
+				// Mute
+				if (params.size() < 2)
+					return event.reply("Error: you need to specify one of the optional time arguments");
+
+				// Load params
+				int minutes = 0;
+				int hours = 0;
+				int days = 0;
+				if (params.stream().anyMatch(t -> t.name().equals("minutes")) && !params.stream()
+						.filter(t -> t.name().equals("minutes")).findFirst().get().value().isAbsent())
+					minutes = Integer.parseInt(
+							params.stream().filter(t -> t.name().equals("minutes")).findFirst().get().value().get());
+				if (params.stream().anyMatch(t -> t.name().equals("hours"))
+						&& !params.stream().filter(t -> t.name().equals("hours")).findFirst().get().value().isAbsent())
+					hours = Integer.parseInt(
+							params.stream().filter(t -> t.name().equals("hours")).findFirst().get().value().get());
+				if (params.stream().anyMatch(t -> t.name().equals("days"))
+						&& !params.stream().filter(t -> t.name().equals("days")).findFirst().get().value().isAbsent())
+					days = Integer.parseInt(
+							params.stream().filter(t -> t.name().equals("days")).findFirst().get().value().get());
+				event.deferReply().block();
+				acc.mute(minutes, hours, days, modacc.getAccountID(), null);
+				event.editReply("Muted player " + acc.getDisplayName()).block();
 				break;
 			}
 			case "pardon": {

@@ -41,9 +41,11 @@ import discord4j.core.object.entity.Guild;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.object.presence.Status;
+import discord4j.discordjson.json.ApplicationCommandData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class DiscordBotModule implements ICenturiaModule {
@@ -159,7 +161,10 @@ public class DiscordBotModule implements ICenturiaModule {
 					.addOption(CommandHandler.createAccountPanel()).addOption(CommandHandler.getAccountInfo())
 					.addOption(CommandHandler.getDiscordAccountInfo()).addOption(CommandHandler.kick())
 					.addOption(CommandHandler.ban()).addOption(CommandHandler.tempBan())
-					.addOption(CommandHandler.pardon()).addOption(CommandHandler.generateClearanceCode()).build();
+					.addOption(CommandHandler.pardon()).addOption(CommandHandler.generateClearanceCode())
+					.addOption(CommandHandler.mute()).addOption(CommandHandler.ipBan())
+					.addOption(CommandHandler.makeModerator()).addOption(CommandHandler.makeAdmin())
+					.addOption(CommandHandler.removePerms()).build();
 
 			// Connect
 			client.gateway().setEnabledIntents(IntentSet.of(Intent.GUILD_PRESENCES, Intent.GUILD_MESSAGES,
@@ -171,10 +176,26 @@ public class DiscordBotModule implements ICenturiaModule {
 
 						// Join guild handler
 						ev = ev.then().and(gateway.on(GuildCreateEvent.class, event -> {
-							if (gateway.getRestClient().getApplicationService()
+							Flux<ApplicationCommandData> cmds = gateway.getRestClient().getApplicationService()
 									.getGuildApplicationCommands(gateway.getRestClient().getApplicationId().block(),
-											event.getGuild().getId().asLong())
-									.count().block() == 0)
+											event.getGuild().getId().asLong());
+							boolean found = cmds.any(t -> t.name().equals("centuria")).block();
+							if (found) {
+								ApplicationCommandData cmd2 = cmds.filter(t -> t.name().equals("centuria"))
+										.blockFirst();
+								if (cmd2.options().get().size() != cmd.options().get().size()) {
+									// Remove
+									try {
+										gateway.getRestClient().getApplicationService().deleteGuildApplicationCommand(
+												gateway.getRestClient().getApplicationId().block(),
+												event.getGuild().getId().asLong(), cmd2.id().asLong());
+										found = false;
+									} catch (Exception e) {
+										// Server did not grant the ability to create commands, lets not crash
+									}
+								}
+							}
+							if (!found)
 								try {
 									gateway.getRestClient().getApplicationService()
 											.createGuildApplicationCommand(

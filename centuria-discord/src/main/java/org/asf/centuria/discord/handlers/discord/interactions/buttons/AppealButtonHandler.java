@@ -31,14 +31,21 @@ public class AppealButtonHandler {
 			// Locate CenturiaAccount
 			CenturiaAccount acc = AccountManager.getInstance().getAccount(gid);
 			if (acc != null) {
-				// Show appeal form
-				InteractionPresentModalSpec.Builder modal = InteractionPresentModalSpec.builder();
-				modal.title("Centuria Online Ban Appeal");
-				modal.customId("appealform");
-				modal.addComponent(ActionRow.of(TextInput.small("short_why", "What was the reason for your ban?")));
-				modal.addComponent(
-						ActionRow.of(TextInput.paragraph("appeal", "Why do you believe you should be pardoned?")));
-				return event.presentModal(modal.build());
+				if (!acc.getSaveSharedInventory().containsItem("appeallock")) { // Show appeal form
+					InteractionPresentModalSpec.Builder modal = InteractionPresentModalSpec.builder();
+					modal.title("Centuria Online Ban Appeal");
+					modal.customId("appealform");
+					modal.addComponent(ActionRow.of(TextInput.small("short_why", "What was the reason for your ban?")));
+					modal.addComponent(
+							ActionRow.of(TextInput.paragraph("appeal", "Why do you believe you should be pardoned?")));
+					modal.addComponent(ActionRow
+							.of(TextInput.small("will_follow_rules", "Will you follow the rules in the game?")));
+					return event.presentModal(modal.build());
+				} else {
+					// Reply error
+					event.getMessage().get().edit().withComponents().subscribe();
+					return event.reply("Cannot send duplicate appeals.");
+				}
 			} else {
 				// Reply error
 				event.getMessage().get().edit().withComponents().subscribe();

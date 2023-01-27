@@ -1,5 +1,11 @@
 package org.asf.centuria.discord.handlers.discord;
 
+import java.util.ArrayList;
+
+import org.asf.centuria.accounts.AccountManager;
+import org.asf.centuria.accounts.CenturiaAccount;
+import org.asf.centuria.discord.DiscordBotModule;
+import org.asf.centuria.discord.LinkUtils;
 import org.asf.centuria.discord.handlers.discord.interactions.buttons.AppealButtonHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.buttons.BasicDismissDeleteHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.buttons.BasicDismissHandler;
@@ -29,9 +35,23 @@ import org.asf.centuria.discord.handlers.discord.interactions.buttons.password.C
 import org.asf.centuria.discord.handlers.discord.interactions.buttons.password.ConfirmResetPasswordHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.buttons.password.ResetPasswordHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.buttons.registration.CreateAccountHandler;
+import org.asf.centuria.networking.gameserver.GameServer;
 
+import com.google.gson.JsonObject;
+
+import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
+import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.entity.Message;
+import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.InteractionApplicationCommandCallbackSpec;
+import discord4j.core.spec.MessageCreateSpec;
+import discord4j.core.spec.MessageEditSpec;
+import discord4j.discordjson.json.MessageReferenceData;
+import discord4j.rest.util.Color;
 import reactor.core.publisher.Mono;
 
 public class InteractionButtonHandler {
@@ -104,6 +124,174 @@ public class InteractionButtonHandler {
 			return ReportReplyButtonHandler.handle(id, event, gateway);
 		} else if (id.equals("downloadsingleplayerlauncher")) {
 			return DownloadSingleplayerLauncherHandler.handle(id, event, gateway);
+		} else if (id.startsWith("rejectappeal/")) {
+			// Required permissions: mod (ingame)
+			CenturiaAccount modacc = LinkUtils
+					.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+			if (modacc == null) {
+				event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.content("**Error:** You dont have a Centuria account linked to your Discord account")
+						.ephemeral(true).build()).block();
+				return Mono.empty();
+			}
+
+			String permLevel = "member";
+			if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+				permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+						.get("permissionLevel").getAsString();
+			}
+			if (!GameServer.hasPerm(permLevel, "moderator")) {
+				event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.content("**Error:** no Centuria moderator permissions.").ephemeral(true).build()).block();
+				return Mono.empty();
+			}
+
+			// Build response (the 'Are you sure' prompt)
+			InteractionApplicationCommandCallbackSpec.Builder msg = InteractionApplicationCommandCallbackSpec.builder();
+			msg.content("Reject appeal?");
+
+			// Add buttons
+			msg.addComponent(
+					ActionRow.of(Button.danger("confirm" + id, "Confirm"), Button.primary("dismissDelete", "Cancel")));
+			return event.reply(msg.build());
+		} else if (id.startsWith("acceptappeal/")) {
+			// Required permissions: mod (ingame)
+			CenturiaAccount modacc = LinkUtils
+					.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+			if (modacc == null) {
+				event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.content("**Error:** You dont have a Centuria account linked to your Discord account")
+						.ephemeral(true).build()).block();
+				return Mono.empty();
+			}
+
+			String permLevel = "member";
+			if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+				permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+						.get("permissionLevel").getAsString();
+			}
+			if (!GameServer.hasPerm(permLevel, "moderator")) {
+				event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.content("**Error:** no Centuria moderator permissions.").ephemeral(true).build()).block();
+				return Mono.empty();
+			}
+
+			// Build response (the 'Are you sure' prompt)
+			InteractionApplicationCommandCallbackSpec.Builder msg = InteractionApplicationCommandCallbackSpec.builder();
+			msg.content("Accept appeal?");
+
+			// Add buttons
+			msg.addComponent(
+					ActionRow.of(Button.danger("confirm" + id, "Confirm"), Button.primary("dismissDelete", "Cancel")));
+			return event.reply(msg.build());
+		} else if (id.startsWith("confirmrejectappeal/")) {
+			// Reject appeal
+			String accID = id.substring("confirmacceptappeal/".length());
+			CenturiaAccount acc = AccountManager.getInstance().getAccount(accID);
+			if (acc == null)
+				return event.reply("**Error:** account no longer exists");
+
+			// Required permissions: mod (ingame)
+			CenturiaAccount modacc = LinkUtils
+					.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+			if (modacc == null) {
+				event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.content("**Error:** You dont have a Centuria account linked to your Discord account")
+						.ephemeral(true).build()).block();
+				return Mono.empty();
+			}
+
+			String permLevel = "member";
+			if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+				permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+						.get("permissionLevel").getAsString();
+			}
+			if (!GameServer.hasPerm(permLevel, "moderator")) {
+				event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.content("**Error:** no Centuria moderator permissions.").ephemeral(true).build()).block();
+				return Mono.empty();
+			}
+
+			// Reject the appeal
+			JsonObject obj = new JsonObject();
+			obj.addProperty("status", "rejected");
+			acc.getSaveSharedInventory().setItem("appeallock", obj);
+
+			// DM them
+			String userID = LinkUtils.getDiscordAccountFrom(acc);
+			if (userID != null) {
+				try {
+					EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
+
+					// Embed
+					embed.title("Appeal rejected");
+					embed.color(Color.RED);
+					embed.description("Your appeal has been rejected.");
+					embed.footer(DiscordBotModule.getServerName(),
+							DiscordBotModule.getClient().getSelf().block().getAvatarUrl());
+
+					// Message object
+					MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
+					msg.addEmbed(embed.build());
+
+					// Send response
+					DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block().getPrivateChannel().block()
+							.createMessage(msg.build()).subscribe();
+				} catch (Exception e) {
+				}
+			}
+
+			// Delete message
+			MessageReferenceData ref = event.getMessage().get().getData().messageReference().get();
+			Message oMsg = gateway
+					.getMessageById(Snowflake.of(ref.channelId().get().asString()), Snowflake.of(ref.messageId().get()))
+					.block();
+			oMsg.edit(MessageEditSpec.builder().components(new ArrayList<LayoutComponent>()).build()).block();
+			event.deferEdit().block();
+			event.getMessage().get().getChannel().block()
+					.createMessage("Rejected " + acc.getDisplayName() + "'s appeal").block();
+			event.getMessage().get().delete().block();
+		} else if (id.startsWith("confirmacceptappeal/")) {
+			// Accept appeal
+			String accID = id.substring("confirmacceptappeal/".length());
+			CenturiaAccount acc = AccountManager.getInstance().getAccount(accID);
+			if (acc == null)
+				return event.reply("**Error:** account no longer exists");
+
+			// Required permissions: mod (ingame)
+			CenturiaAccount modacc = LinkUtils
+					.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+			if (modacc == null) {
+				event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.content("**Error:** You dont have a Centuria account linked to your Discord account")
+						.ephemeral(true).build()).block();
+				return Mono.empty();
+			}
+
+			String permLevel = "member";
+			if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+				permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+						.get("permissionLevel").getAsString();
+			}
+			if (!GameServer.hasPerm(permLevel, "moderator")) {
+				event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.content("**Error:** no Centuria moderator permissions.").ephemeral(true).build()).block();
+				return Mono.empty();
+			}
+
+			// Accept the appeal
+			acc.pardon("Appeal has been accepted");
+
+			// Delete message
+			MessageReferenceData ref = event.getMessage().get().getData().messageReference().get();
+			Message oMsg = gateway
+					.getMessageById(Snowflake.of(ref.channelId().get().asString()), Snowflake.of(ref.messageId().get()))
+					.block();
+			oMsg.edit(MessageEditSpec.builder().components(new ArrayList<LayoutComponent>()).build()).block();
+			event.deferEdit().block();
+			event.getMessage().get().getChannel().block()
+					.createMessage("Accepted " + acc.getDisplayName() + "'s appeal").block();
+			event.getMessage().get().delete().block();
 		}
 
 		// Default handler

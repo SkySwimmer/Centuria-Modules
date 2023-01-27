@@ -53,7 +53,7 @@ public class ModerationHandlers implements IEventReceiver {
 				ev.getIssuer(), ev.getReason());
 
 		if (userID != null) {
-			// DM them
+			// DM them if not appealed before
 			try {
 				EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
 
@@ -63,7 +63,11 @@ public class ModerationHandlers implements IEventReceiver {
 					message = "You have been banned from our servers:\n`" + ev.getReason() + "`\n";
 				message += "\n";
 				if (ev.isPermanent()) {
-					message += "This is a permanent ban, you can attempt to appeal by pressing the button below.\n"
+					message += "This is a permanent ban, "
+							+ (ev.getAccount().getSaveSharedInventory().containsItem("appeallock")
+									? "you cannot log in until pardoned."
+									: " you can attempt to appeal by pressing the button below.")
+							+ "\n"
 							+ "Due to this being a permanent ban, you receive a singleplayer launcher with your data. However note that you will not be able to play with others, multiplayer is completely disabled.\n\nNote that if you have no mutual servers with the bot you cannot download the launcher, use the website if you are banned from the Discord server to obtain your data.";
 				} else
 					message += "This is a temporary ban, you cannot log on for " + ev.getDays() + " days.";
@@ -81,7 +85,7 @@ public class ModerationHandlers implements IEventReceiver {
 				msg.addEmbed(embed.build());
 
 				// Appeal button (if permanent)
-				if (ev.isPermanent()) {
+				if (ev.isPermanent() && !ev.getAccount().getSaveSharedInventory().containsItem("appeallock")) {
 					msg.addComponent(ActionRow.of(
 							Button.danger("appeal/" + userID + "/" + ev.getAccount().getAccountID(),
 									"Appeal for pardon"),
@@ -214,6 +218,10 @@ public class ModerationHandlers implements IEventReceiver {
 		// Log moderation
 		moderationLog("Pardon", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(), null,
 				ev.getIssuer(), ev.getReason());
+
+		// Remove appeal lock
+		if (ev.getAccount().getSaveSharedInventory().containsItem("appeallock"))
+			ev.getAccount().getSaveSharedInventory().deleteItem("appeallock");
 
 		if (userID != null) {
 			// DM them

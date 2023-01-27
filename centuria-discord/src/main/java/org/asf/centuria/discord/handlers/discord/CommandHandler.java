@@ -253,7 +253,7 @@ public class CommandHandler {
 			String subCmd = data.options().get().get(0).name();
 			switch (subCmd) {
 			case "generateclearancecode": {
-				// Required permissions: mod (ingame)
+				// Required permissions: admin (ingame)
 				CenturiaAccount modacc = LinkUtils
 						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
 				if (modacc == null) {

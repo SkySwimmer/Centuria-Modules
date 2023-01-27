@@ -34,14 +34,19 @@ public class AppealHandler {
 				.get(0).value().get();
 		String pardonReason = event.getInteraction().getData().data().get().components().get().get(1).components().get()
 				.get(0).value().get();
+		String followRules = event.getInteraction().getData().data().get().components().get().get(2).components().get()
+				.get(0).value().get();
 
 		// Find owner UserID
 		String userID = event.getInteraction().getUser().getId().asString();
 
 		// Find account
 		CenturiaAccount account = LinkUtils.getAccountByDiscordID(userID);
-		if (account == null)
+		if (account == null || account.getSaveSharedInventory().containsItem("appeallock"))
 			return Mono.empty();
+		JsonObject obj = new JsonObject();
+		obj.addProperty("status", "pending");
+		account.getSaveSharedInventory().setItem("appeallock", obj);
 
 		// Build report
 		String report = "Appeal form:\n";
@@ -55,6 +60,11 @@ public class AppealHandler {
 		report += "Why do you believe you should be pardoned?\n";
 		report += "--------------------------------------------------------------------------------------------------\n";
 		report += pardonReason + "\n";
+		report += "--------------------------------------------------------------------------------------------------\n";
+		report += "\n";
+		report += "Will you follow the rules in the game?\n";
+		report += "--------------------------------------------------------------------------------------------------\n";
+		report += followRules + "\n";
 		report += "--------------------------------------------------------------------------------------------------\n";
 
 		// Send to all guild log channels
@@ -84,6 +94,10 @@ public class AppealHandler {
 					msg.addFile("appeal.txt", new ByteArrayInputStream(report.getBytes("UTF-8")));
 				} catch (UnsupportedEncodingException e1) {
 				}
+
+				// Add buttons
+				msg.addComponent(ActionRow.of(Button.danger("acceptappeal/" + account.getAccountID(), "Accept appeal"),
+						Button.danger("rejectappeal/" + account.getAccountID(), "Reject appeal")));
 
 				// Attempt to send message
 				try {

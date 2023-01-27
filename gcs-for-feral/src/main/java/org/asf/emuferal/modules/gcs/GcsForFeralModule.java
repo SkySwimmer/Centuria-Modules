@@ -170,7 +170,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 				if (DMManager.getInstance().dmExists(id)) {
 					// List it
 					String[] participants = DMManager.getInstance().getDMParticipants(id);
-					msg += "\n - " + participants[0].substring("plaintext:[GC] ".length()) + " "
+					msg += "\n - " + participants[0].substring("plaintext:[GC] ".length()) + " - "
 							+ (participants.length - 1) + " participant(s)";
 				} else {
 					// Remove it
@@ -533,6 +533,8 @@ public class GcsForFeralModule implements ICenturiaModule {
 		if (!isGCConvo(id, acc)) {
 			boolean found = false;
 			ArrayList<JsonElement> toRemove = new ArrayList<JsonElement>();
+			if (!acc.getSaveSharedInventory().containsItem("gcs"))
+				acc.getSaveSharedInventory().setItem("gcs", new JsonArray());
 			JsonArray arr = acc.getSaveSharedInventory().getItem("gcs").getAsJsonArray();
 			for (JsonElement ele : arr) {
 				String cid = ele.getAsString();
@@ -636,7 +638,8 @@ public class GcsForFeralModule implements ICenturiaModule {
 
 			// Broadcast
 			for (ChatClient cl : Centuria.chatServer.getClients())
-				cl.sendPacket(res);
+				if (cl.isInRoom(id))
+					cl.sendPacket(res);
 		}
 	}
 

@@ -1,6 +1,10 @@
 package org.asf.centuria.discord.handlers.discord;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Map;
@@ -11,6 +15,7 @@ import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
+import org.asf.centuria.discord.applications.ApplicationManager;
 import org.asf.centuria.entities.players.Player;
 import org.asf.centuria.ipbans.IpBanManager;
 import org.asf.centuria.modules.eventbus.EventBus;
@@ -31,6 +36,7 @@ import discord4j.core.object.component.SelectMenu.Option;
 import discord4j.core.object.component.TextInput;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec;
+import discord4j.core.spec.InteractionCallbackSpec;
 import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.discordjson.json.ApplicationCommandInteractionData;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
@@ -221,7 +227,7 @@ public class CommandHandler {
 	public static ApplicationCommandOptionData pardon() {
 		return ApplicationCommandOptionData.builder().name("pardon").description("Removes player penalties")
 				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
-						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player to ban")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player to pardon")
 						.required(true).build())
 				.addOption(ApplicationCommandOptionData.builder().name("reason")
 						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Pardon reason").build())
@@ -234,6 +240,29 @@ public class CommandHandler {
 	public static ApplicationCommandOptionData generateClearanceCode() {
 		return ApplicationCommandOptionData.builder().name("generateclearancecode")
 				.description("Generates an admin clearance code")
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The application code generation command
+	 */
+	public static ApplicationCommandOptionData generateApplicationCode() {
+		return ApplicationCommandOptionData.builder().name("generateapplicationcode")
+				.description("Generates an application code")
+				.addOption(ApplicationCommandOptionData.builder().name("application")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Application ID")
+						.required(true).build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * Application command
+	 */
+	public static ApplicationCommandOptionData apply() {
+		return ApplicationCommandOptionData.builder().name("apply").description("Applies for a specific application")
+				.addOption(ApplicationCommandOptionData.builder().name("code")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Application code")
+						.required(true).build())
 				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
 	}
 
@@ -267,7 +296,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
-					event.reply("**Error:** no Centuria admin permissions.").block();
+					event.reply("**Error:** No Centuria admin permissions.").block();
 					return Mono.empty();
 				}
 
@@ -309,6 +338,92 @@ public class CommandHandler {
 				th.start();
 				break;
 			}
+			case "apply": {
+				// Check link
+				CenturiaAccount account = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (account == null)
+					return event.reply("**Error:** No Centuria account linked with your Discord account.");
+				if (account.isBanned() || account.isMuted())
+					return event.reply("**Error:** Cannot apply with a muted/banned account.");
+
+				// Check code
+				String code = data.options().get().get(0).options().get().get(0).value().get();
+				if (!code.matches("^[0-9a-zA-Z]+$") || !new File("applications/codes/" + code).exists())
+					return event.reply("**Error:** Invalid application code.");
+
+				String app;
+				try {
+					// Read application
+					app = Files.readString(Path.of("applications/codes/" + code));
+
+					// Check
+					if (ApplicationManager.isApplying(event.getInteraction().getUser()))
+						return event.reply("**Error:** You can only apply for one application at a time.");
+					if (ApplicationManager.hasApplied(app, event.getInteraction().getUser()))
+						return event.reply("**Error:** You have already applied for this application.");
+
+					// Delete
+					Files.delete(Path.of("applications/codes/" + code));
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+
+				// Start application
+				event.deferReply(InteractionCallbackSpec.builder().ephemeral(true).build()).block();
+				if (!ApplicationManager.startApplication(app, event.getInteraction().getUser()))
+					return event.editReply(
+							"An unexpected error occured, are your dms open?\nIf they aren't open the cause of the error is likely that, however if your dms are actually open then this is a server error.");
+				return event.editReply("Application started in DM");
+			}
+			case "generateapplicationcode": {
+				// Required permissions: admin (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "admin")) {
+					event.reply("**Error:** No Centuria admin permissions.").block();
+					return Mono.empty();
+				}
+
+				// Check application
+				String application = data.options().get().get(0).options().get().get(0).value().get();
+				if (!application.matches("^[0-9a-zA-Z]+$")
+						|| !new File("applications/" + application + ".json").exists())
+					return event.reply("**Error:** Invalid application.");
+
+				// Handle
+				long codeLong = rnd.nextLong();
+				String code = "";
+				while (true) {
+					while (codeLong < 10000)
+						codeLong = rnd.nextLong();
+					code = Long.toString(codeLong, 16);
+					try {
+						if (!new File("applications/codes/" + code).exists())
+							break;
+					} catch (ConcurrentModificationException e) {
+					}
+					code = Long.toString(rnd.nextLong(), 16);
+				}
+				try {
+					Files.writeString(Path.of("applications/codes/" + code), application);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				event.reply(InteractionApplicationCommandCallbackSpec.builder()
+						.content("Application code generated: " + code).ephemeral(true).build()).block();
+				break;
+			}
 			case "getdiscord": {
 				// Required permissions: mod (ingame)
 				CenturiaAccount modacc = LinkUtils
@@ -324,7 +439,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
-					event.reply("**Error:** no Centuria moderator permissions.").block();
+					event.reply("**Error:** No Centuria moderator permissions.").block();
 					return Mono.empty();
 				}
 
@@ -378,7 +493,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
-					event.reply("**Error:** no Centuria moderator permissions.").block();
+					event.reply("**Error:** No Centuria moderator permissions.").block();
 					return Mono.empty();
 				}
 
@@ -444,7 +559,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
-					event.reply("**Error:** no Centuria moderator permissions.").block();
+					event.reply("**Error:** No Centuria moderator permissions.").block();
 					return Mono.empty();
 				}
 
@@ -460,10 +575,6 @@ public class CommandHandler {
 				if (acc == null) {
 					// Respond with error message
 					event.reply("**Error:** player not recognized.").block();
-					return Mono.empty();
-				}
-				if (acc.isBanned()) {
-					event.reply("**Error:** player is already banned.").block();
 					return Mono.empty();
 				}
 
@@ -510,7 +621,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
-					event.reply("**Error:** no Centuria admin permissions.").block();
+					event.reply("**Error:** No Centuria admin permissions.").block();
 					return Mono.empty();
 				}
 
@@ -540,7 +651,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
-					event.reply("**Error:** no Centuria admin permissions.").block();
+					event.reply("**Error:** No Centuria admin permissions.").block();
 					return Mono.empty();
 				}
 
@@ -624,7 +735,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
-					event.reply("**Error:** no Centuria admin permissions.").block();
+					event.reply("**Error:** No Centuria admin permissions.").block();
 					return Mono.empty();
 				}
 
@@ -690,7 +801,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
-					event.reply("**Error:** no Centuria admin permissions.").block();
+					event.reply("**Error:** No Centuria admin permissions.").block();
 					return Mono.empty();
 				}
 
@@ -756,7 +867,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
-					event.reply("**Error:** no Centuria moderator permissions.").block();
+					event.reply("**Error:** No Centuria moderator permissions.").block();
 					return Mono.empty();
 				}
 
@@ -797,7 +908,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "admin")) {
-					event.reply("**Error:** no Centuria admin permissions.").block();
+					event.reply("**Error:** No Centuria admin permissions.").block();
 					return Mono.empty();
 				}
 
@@ -865,7 +976,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
-					event.reply("**Error:** no Centuria moderator permissions.").block();
+					event.reply("**Error:** No Centuria moderator permissions.").block();
 					return Mono.empty();
 				}
 
@@ -881,10 +992,6 @@ public class CommandHandler {
 				if (acc == null) {
 					// Respond with error message
 					event.reply("**Error:** player not recognized.").block();
-					return Mono.empty();
-				}
-				if (acc.isBanned()) {
-					event.reply("**Error:** player is already banned.").block();
 					return Mono.empty();
 				}
 
@@ -933,7 +1040,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
-					event.reply("**Error:** no Centuria moderator permissions.").block();
+					event.reply("**Error:** No Centuria moderator permissions.").block();
 					return Mono.empty();
 				}
 
@@ -1013,7 +1120,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
-					event.reply("**Error:** no Centuria moderator permissions.").block();
+					event.reply("**Error:** No Centuria moderator permissions.").block();
 					return Mono.empty();
 				}
 
@@ -1078,7 +1185,7 @@ public class CommandHandler {
 							.get("permissionLevel").getAsString();
 				}
 				if (!GameServer.hasPerm(permLevel, "moderator")) {
-					event.reply("**Error:** no Centuria moderator permissions.").block();
+					event.reply("**Error:** No Centuria moderator permissions.").block();
 					return Mono.empty();
 				}
 

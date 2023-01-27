@@ -3,6 +3,7 @@ package org.asf.centuria.discord.handlers.discord;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
+import org.asf.centuria.discord.applications.ApplicationManager;
 import org.asf.centuria.discord.handlers.discord.interactions.forms.AppealHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.forms.DeleteAccountHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.forms.FeedbackReplyHandler;
@@ -50,6 +51,8 @@ public class InteractionModalHandler {
 			return FeedbackReplyHandler.handle(id, event, gateway);
 		} else if (id.startsWith("reportreply/")) {
 			return ReportReplyHandler.handle(id, event, gateway);
+		} else if (id.startsWith("application/")) {
+			return ApplicationManager.handleModal(id.substring("application/".length()), event, gateway);
 		} else if (id.equalsIgnoreCase("createaccountpanel")) {
 			event.deferReply().block();
 			var guild = event.getInteraction().getGuild().block();

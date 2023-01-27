@@ -6,6 +6,7 @@ import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
+import org.asf.centuria.discord.applications.ApplicationManager;
 import org.asf.centuria.discord.handlers.discord.interactions.buttons.AppealButtonHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.buttons.BasicDismissDeleteHandler;
 import org.asf.centuria.discord.handlers.discord.interactions.buttons.BasicDismissHandler;
@@ -124,6 +125,8 @@ public class InteractionButtonHandler {
 			return ReportReplyButtonHandler.handle(id, event, gateway);
 		} else if (id.equals("downloadsingleplayerlauncher")) {
 			return DownloadSingleplayerLauncherHandler.handle(id, event, gateway);
+		} else if (id.startsWith("application/")) {
+			return ApplicationManager.handleButton(id.substring("application/".length()), event, gateway);
 		} else if (id.startsWith("rejectappeal/")) {
 			// Required permissions: mod (ingame)
 			CenturiaAccount modacc = LinkUtils

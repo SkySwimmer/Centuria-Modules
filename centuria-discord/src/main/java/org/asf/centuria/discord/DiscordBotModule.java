@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 import org.asf.centuria.Centuria;
+import org.asf.centuria.discord.applications.ApplicationManager;
 import org.asf.centuria.discord.handlers.api.AppealHandler;
 import org.asf.centuria.discord.handlers.api.ForgotPasswordHandler;
 import org.asf.centuria.discord.handlers.discord.CommandHandler;
@@ -32,6 +33,7 @@ import com.google.gson.JsonSyntaxException;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
+import discord4j.core.event.domain.guild.MemberLeaveEvent;
 import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
@@ -100,6 +102,15 @@ public class DiscordBotModule implements ICenturiaModule {
 		EventBus.getInstance().addEventReceiver(new GamePacketHandlers());
 		EventBus.getInstance().addEventReceiver(new AppealHandler());
 
+		// Applications
+		if (!new File("applications/codes").exists())
+			new File("applications/codes").mkdirs();
+		if (!new File("applications/active").exists())
+			new File("applications/active").mkdirs();
+		if (!new File("applications/applied").exists())
+			new File("applications/applied").mkdirs();
+		ApplicationManager.start();
+
 		// Init registration helper
 		DiscordRegistrationHelper.init();
 
@@ -166,7 +177,8 @@ public class DiscordBotModule implements ICenturiaModule {
 					.addOption(CommandHandler.pardon()).addOption(CommandHandler.generateClearanceCode())
 					.addOption(CommandHandler.mute()).addOption(CommandHandler.ipBan())
 					.addOption(CommandHandler.makeModerator()).addOption(CommandHandler.makeAdmin())
-					.addOption(CommandHandler.removePerms()).addOption(CommandHandler.dmAnonymous()).build();
+					.addOption(CommandHandler.removePerms()).addOption(CommandHandler.dmAnonymous())
+					.addOption(CommandHandler.generateApplicationCode()).addOption(CommandHandler.apply()).build();
 
 			// Connect
 			client.gateway().setEnabledIntents(IntentSet.of(Intent.GUILD_PRESENCES, Intent.GUILD_MESSAGES,
@@ -224,6 +236,12 @@ public class DiscordBotModule implements ICenturiaModule {
 						ev = ev.then().and(gateway.on(ApplicationCommandInteractionEvent.class, event -> {
 							Guild guild = event.getInteraction().getGuild().block();
 							return CommandHandler.handle(event, guild, gateway);
+						}));
+
+						// User leave
+						ev = ev.then().and(gateway.on(MemberLeaveEvent.class, event -> {
+							ApplicationManager.cancelApplication(event.getUser(), true, "user left server");
+							return Mono.empty();
 						}));
 
 						// Command handler

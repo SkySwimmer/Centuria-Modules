@@ -5,6 +5,7 @@ import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
 import org.asf.centuria.discord.ServerConfigUtils;
+import org.asf.centuria.discord.applications.ApplicationManager;
 import org.asf.centuria.modules.eventbus.EventListener;
 import org.asf.centuria.modules.eventbus.IEventReceiver;
 import org.asf.centuria.modules.events.accounts.AccountBanEvent;
@@ -20,6 +21,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.User;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.util.Color;
@@ -46,6 +48,15 @@ public class ModerationHandlers implements IEventReceiver {
 	public void handleBan(AccountBanEvent ev) {
 		// Find discord client (if present)
 		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
+		if (userID != null) {
+			User user = null;
+			try {
+				user = DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block();
+			} catch (Exception e) {
+			}
+			if (user != null)
+				ApplicationManager.cancelApplication(user, false, "Centuria account was moderated");
+		}
 
 		// Log moderation
 		moderationLog("Ban", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
@@ -104,6 +115,15 @@ public class ModerationHandlers implements IEventReceiver {
 	public void handleDelete(AccountDeletionEvent ev) {
 		// Find discord client (if present)
 		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
+		if (userID != null) {
+			User user = null;
+			try {
+				user = DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block();
+			} catch (Exception e) {
+			}
+			if (user != null)
+				ApplicationManager.cancelApplication(user, false, "Centuria account was delted");
+		}
 
 		// Log moderation
 		moderationLog("Account Deleted", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(), null,
@@ -165,6 +185,15 @@ public class ModerationHandlers implements IEventReceiver {
 	public void handleMute(AccountMuteEvent ev) {
 		// Find discord client (if present)
 		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
+		if (userID != null) {
+			User user = null;
+			try {
+				user = DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block();
+			} catch (Exception e) {
+			}
+			if (user != null)
+				ApplicationManager.cancelApplication(user, false, "Centuria account was moderated");
+		}
 
 		// Log moderation
 		moderationLog("Mute", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),

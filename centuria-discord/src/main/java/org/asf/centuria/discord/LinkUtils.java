@@ -9,6 +9,7 @@ import java.util.HashMap;
 
 import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
+import org.asf.centuria.discord.applications.ApplicationManager;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -17,6 +18,7 @@ import com.google.gson.JsonSyntaxException;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
+import discord4j.core.object.entity.User;
 import discord4j.core.spec.MessageCreateSpec;
 
 public class LinkUtils {
@@ -290,6 +292,13 @@ public class LinkUtils {
 		// Load account details
 		String userID = account.getSaveSharedInventory().getItem("pairedaccount").getAsJsonObject().get("userId")
 				.getAsString();
+		User user = null;
+		try {
+			user = DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block();
+		} catch (Exception e) {
+		}
+		if (user != null)
+			ApplicationManager.cancelApplication(user, true, "Centuria account unpaired or transferred");
 
 		// Check penalty
 		if (account.getSaveSharedInventory().containsItem("penalty")) {
@@ -307,7 +316,7 @@ public class LinkUtils {
 			accountLinks.remove(userID);
 		saveRegistry();
 
-		if (sendDM) {
+		if (sendDM && user != null) {
 			// DM the user
 			try {
 				MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
@@ -328,8 +337,7 @@ public class LinkUtils {
 						Button.primary("dismissDelete", "Dismiss")));
 
 				// Send response
-				DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block().getPrivateChannel().block()
-						.createMessage(msg.build()).subscribe();
+				user.getPrivateChannel().block().createMessage(msg.build()).subscribe();
 			} catch (Exception e) {
 			}
 		}

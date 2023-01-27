@@ -102,7 +102,7 @@ public class ModerationHandlers implements IEventReceiver {
 		message += "\n";
 		message += "Action: **" + type + "**";
 		if (data != null)
-			message += "\n" + data;
+			message += "\n" + data + "\n";
 		if (reason != null)
 			message += "\nAction reason: **" + reason + "**\n";
 		else if (data == null)

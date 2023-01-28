@@ -273,21 +273,6 @@ public class ApplicationManager {
 		}
 		ApplicationDefinition def = new ApplicationDefinition().fromJson(data);
 
-		// Create application memory object
-		JsonObject memory = new JsonObject();
-		JsonObject fields = new JsonObject();
-		memory.addProperty("id", application);
-		memory.add("application", data);
-		memory.addProperty("index", 0);
-		memory.add("fields", fields);
-		try {
-			new File("applications/active/" + application).mkdirs();
-			Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"), memory.toString());
-			Files.writeString(Path.of("applications/active/" + application + "/" + user.getId().asString()), "");
-		} catch (IOException e) {
-			return false;
-		}
-
 		// Send DM
 		try {
 			EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
@@ -307,8 +292,25 @@ public class ApplicationManager {
 			msg.addComponent(ActionRow.of(Button.success("application/movenext", "Start application"),
 					Button.primary("application/cancel", "Cancel application")));
 
-			// Send response
+			// Send message
 			user.getPrivateChannel().block().createMessage(msg.build()).subscribe();
+
+			// Create application memory object
+			JsonObject memory = new JsonObject();
+			JsonObject fields = new JsonObject();
+			memory.addProperty("id", application);
+			memory.add("application", data);
+			memory.addProperty("index", 0);
+			memory.add("fields", fields);
+			try {
+				new File("applications/active/" + application).mkdirs();
+				Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+						memory.toString());
+				Files.writeString(Path.of("applications/active/" + application + "/" + user.getId().asString()), "");
+			} catch (IOException e) {
+				return false;
+			}
+
 			return true;
 		} catch (Exception e) {
 			return false;

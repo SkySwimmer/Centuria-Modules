@@ -48,7 +48,7 @@ public class SaveSelectMenu {
 							.embeds(Arrays.asList(EmbedCreateSpec.builder().title("Save switch failure")
 									.description("Could not switch to '" + save + "'").color(Color.RED).build()))
 							.build());
-		account.kick("Save data switched");
+		account.kickDirect("SYSTEM", "Save data switched");
 
 		// Default response
 		return event

@@ -534,7 +534,7 @@ public class ApplicationManager {
 			if (!ApplicationManager.startApplication(application, event.getInteraction().getUser()))
 				return event.editReply(InteractionReplyEditSpec.builder()
 						.addEmbed(EmbedCreateSpec.builder().title("Error").description(
-								"An unexpected error occured, are your dms open?\\nIf they aren't open the cause of the error is likely that, however if your dms are actually open then this is a server error.")
+								"An unexpected error occured, are your dms open?\nIf they aren't open the cause of the error is likely that, however if your dms are actually open then this is a server error.")
 								.color(Color.RED).build())
 						.build());
 			return event.editReply(InteractionReplyEditSpec.builder()

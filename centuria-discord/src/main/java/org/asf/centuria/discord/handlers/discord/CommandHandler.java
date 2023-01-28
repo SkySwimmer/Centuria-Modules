@@ -385,7 +385,7 @@ public class CommandHandler {
 				event.deferReply(InteractionCallbackSpec.builder().ephemeral(true).build()).block();
 				if (!ApplicationManager.startApplication(app, event.getInteraction().getUser()))
 					return event.editReply(
-							"An unexpected error occured, are your dms open?\nIf they aren't open the cause of the error is likely that, however if your dms are actually open then this is a server error.");
+							"An unexpected error occured, are your dms open?\n\nIf they aren't open the cause of the error is likely that, however if your dms are actually open then this is a server error.");
 				return event.editReply("Application started in DM");
 			}
 			case "createapplicationpanel": {

@@ -19,6 +19,7 @@ import org.asf.centuria.accounts.PlayerInventory;
 import org.asf.centuria.accounts.SaveMode;
 import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
+import org.asf.centuria.entities.players.Player;
 import org.asf.centuria.networking.gameserver.GameServer;
 
 import com.google.gson.Gson;
@@ -1061,10 +1062,10 @@ public class ApplicationManager {
 							throw new IllegalArgumentException("Invalid ban type");
 
 						// Kick
-						if (cmd.parameters.has("reason"))
-							account.kickDirect("SYSTEM", cmd.parameters.get("reason").getAsString());
-						else
-							account.kickDirect("SYSTEM", null);
+						Player plr = account.getOnlinePlayerInstance();
+						if (plr != null) {
+							plr.client.disconnect();
+						}
 
 						// Move to next
 						return handleButton("movenext", event, gateway);
@@ -1500,10 +1501,10 @@ public class ApplicationManager {
 						throw new IllegalArgumentException("Invalid ban type");
 
 					// Kick
-					if (cmd.parameters.has("reason"))
-						account.kickDirect("SYSTEM", cmd.parameters.get("reason").getAsString());
-					else
-						account.kickDirect("SYSTEM", null);
+					Player plr = account.getOnlinePlayerInstance();
+					if (plr != null) {
+						plr.client.disconnect();
+					}
 					break;
 				}
 

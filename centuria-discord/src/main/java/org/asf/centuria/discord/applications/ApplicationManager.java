@@ -176,10 +176,10 @@ public class ApplicationManager {
 			} else {
 				int current = 0;
 				if (new File("applications/applied/" + panel.application).exists())
-					current += new File("application/applied/" + panel.application).listFiles().length;
-				if (new File("application/active/" + panel.application).exists())
-					current += new File("application/active/" + panel.application).listFiles().length;
-				if (new File("application/active/" + panel.application).exists()
+					current += new File("applications/applied/" + panel.application).listFiles().length;
+				if (new File("applications/active/" + panel.application).exists())
+					current += new File("applications/active/" + panel.application).listFiles().length;
+				if (new File("applications/active/" + panel.application).exists()
 						&& current >= panel.def.applicantLimit) {
 					status = "Status: applicant limit reached (review limit reached, might become available again)";
 					disabled = true;

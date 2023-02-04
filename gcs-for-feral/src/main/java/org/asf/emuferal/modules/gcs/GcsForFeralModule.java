@@ -46,27 +46,31 @@ public class GcsForFeralModule implements ICenturiaModule {
 
 	@EventListener
 	public void accountBan(AccountBanEvent event) {
-		// Player banned, leave all GCs
-		JsonArray arr = event.getAccount().getSaveSharedInventory().getItem("gcs").getAsJsonArray();
-		for (JsonElement ele : arr) {
-			String id = ele.getAsString();
+		if (event.getAccount().getSaveSharedInventory().containsItem("gcs")) {
+			// Player banned, leave all GCs
+			JsonArray arr = event.getAccount().getSaveSharedInventory().getItem("gcs").getAsJsonArray();
+			for (JsonElement ele : arr) {
+				String id = ele.getAsString();
 
-			// Check GC
-			if (DMManager.getInstance().dmExists(id))
-				leaveGC(id, event.getAccount());
+				// Check GC
+				if (DMManager.getInstance().dmExists(id))
+					leaveGC(id, event.getAccount());
+			}
 		}
 	}
 
 	@EventListener
 	public void accountDelete(AccountDeletionEvent event) {
-		// Player banned, leave all GCs
-		JsonArray arr = event.getAccount().getSaveSharedInventory().getItem("gcs").getAsJsonArray();
-		for (JsonElement ele : arr) {
-			String id = ele.getAsString();
+		if (event.getAccount().getSaveSharedInventory().containsItem("gcs")) {
+			// Player banned, leave all GCs
+			JsonArray arr = event.getAccount().getSaveSharedInventory().getItem("gcs").getAsJsonArray();
+			for (JsonElement ele : arr) {
+				String id = ele.getAsString();
 
-			// Check GC
-			if (DMManager.getInstance().dmExists(id))
-				leaveGC(id, event.getAccount());
+				// Check GC
+				if (DMManager.getInstance().dmExists(id))
+					leaveGC(id, event.getAccount());
+			}
 		}
 	}
 

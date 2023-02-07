@@ -71,7 +71,7 @@ public class PeerToPeerWindow {
 		btnNewButton = new JButton("Connect to room");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (textField.getText().length() < 3 || textField.getText().length() > 25) {
+				if (textField.getText().length() < 3 || textField.getText().length() > 40) {
 					JOptionPane.showMessageDialog(frame, "Not a valid room ID", "Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}

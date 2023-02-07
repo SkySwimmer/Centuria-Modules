@@ -391,18 +391,20 @@ public class PeerToPeerModule implements ICenturiaModule {
 				// Remove players from their sanctuary
 				for (Player plr : srv.getPlayers()) {
 					if (!(plr.client instanceof P2PSmartfoxClient)) {
-						RoomJoinPacket packet = new RoomJoinPacket();
-						packet.levelID = 820;
-						new Thread(() -> {
-							try {
-								Centuria.systemMessage(plr, player.displayName
-										+ " has left the server.\nYou will be moved to city fera as their sanctuary no longer exists.",
-										true);
-								Thread.sleep(5000);
-								packet.handle(plr.client);
-							} catch (IOException | InterruptedException e) {
-							}
-						}).start();
+						if (plr.levelType == 2 && plr.room.equals("sanctuary_" + player.id)) {
+							RoomJoinPacket packet = new RoomJoinPacket();
+							packet.levelID = 820;
+							new Thread(() -> {
+								try {
+									Centuria.systemMessage(plr, player.displayName
+											+ " has left the server.\nYou will be moved to city fera as their sanctuary no longer exists.",
+											true);
+									Thread.sleep(5000);
+									packet.handle(plr.client);
+								} catch (IOException | InterruptedException e) {
+								}
+							}).start();
+						}
 					}
 				}
 			}

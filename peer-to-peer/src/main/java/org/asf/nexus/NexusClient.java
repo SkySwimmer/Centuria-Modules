@@ -26,9 +26,9 @@ public class NexusClient {
 	private long lastPing = -1;
 
 	/**
-	 * Nexus protocol version, currently version 3
+	 * Nexus protocol version, currently version 4
 	 */
-	public static final int PROTOCOL_VERSION = 3;
+	public static final int PROTOCOL_VERSION = 4;
 
 	private ArrayList<ConnectionEvent> connectedEvent = new ArrayList<ConnectionEvent>();
 	private ArrayList<ConnectionEvent> disconnectedEvent = new ArrayList<ConnectionEvent>();
@@ -299,7 +299,7 @@ public class NexusClient {
 	}
 
 	static enum PacketType {
-		DATA(0), DISCONNECT(1), CONNECT(2), PING(3);
+		DATA(0), DISCONNECT(1), CONNECT(2), PING(3), SWITCHCHANNEL(4);
 
 		byte val;
 
@@ -491,6 +491,24 @@ public class NexusClient {
 	 */
 	public String getChannel() {
 		return channel;
+	}
+
+	/**
+	 * Switches channels
+	 * 
+	 * @param channel New channel ID
+	 * @throws IOException If sending fails
+	 */
+	public void switchChannel(String channel) throws IOException {
+		if (!isConnected())
+			throw new IOException("Stream closed");
+		if (channel.equals("*"))
+			throw new IllegalArgumentException("Illegal channel ID");
+		PkData d = new PkData();
+		d.source = channel;
+		d.type = PacketType.SWITCHCHANNEL;
+		sendPacketInternal(d, false);
+		this.channel = channel;
 	}
 
 	/**

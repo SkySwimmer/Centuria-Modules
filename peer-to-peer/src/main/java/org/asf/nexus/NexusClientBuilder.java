@@ -2,18 +2,11 @@ package org.asf.nexus;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.DatagramPacket;
 import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
-import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.URL;
-import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
-import java.util.Enumeration;
-
 import javax.net.ssl.SSLSocketFactory;
 
 /**
@@ -37,7 +30,6 @@ public class NexusClientBuilder {
 
 	private boolean isServer = false;
 	private boolean tryServerList = true;
-	private boolean tryMulticastScan = true;
 
 	NexusClientBuilder serverDownlink() {
 		isServer = true;
@@ -67,16 +59,6 @@ public class NexusClientBuilder {
 	}
 
 	/**
-	 * Disables the lan scan for nexus servers
-	 * 
-	 * @return Current builder
-	 */
-	public NexusClientBuilder noMulticastScan() {
-		tryMulticastScan = false;
-		return this;
-	}
-
-	/**
 	 * Disables the server list scan for nexus servers
 	 * 
 	 * @return Current builder
@@ -87,27 +69,25 @@ public class NexusClientBuilder {
 	}
 
 	/**
-	 * Assigns the server address (implies noMulticastScan and noServerListScan)
+	 * Assigns the server address (implies noServerListScan)
 	 * 
 	 * @param address Nexus server address
 	 * @return Current builder
 	 */
 	public NexusClientBuilder withAddress(String address) {
 		this.address = address;
-		tryMulticastScan = false;
 		tryServerList = false;
 		return this;
 	}
 
 	/**
-	 * Assigns the server port (implies noMulticastScan and noServerListScan)
+	 * Assigns the server port (implies noServerListScan)
 	 * 
 	 * @param port Nexus server port
 	 * @return Current builder
 	 */
 	public NexusClientBuilder withPort(int port) {
 		this.port = port;
-		tryMulticastScan = false;
 		tryServerList = false;
 		return this;
 	}
@@ -194,41 +174,20 @@ public class NexusClientBuilder {
 	}
 
 	private static class NexusInstance {
-		private String reachableAddress = null;
-		public String[] addresses = null;
+		public String address = null;
 		public int port = 0;
-
-		public String findAddress() {
-			if (reachableAddress != null)
-				return reachableAddress;
-			for (String addr : addresses) {
-				try {
-					Socket sock = SSLSocketFactory.getDefault().createSocket();
-					sock.connect(new InetSocketAddress(addr, port), 1000);
-					if (!sock.isConnected()) {
-						sock.close();
-						reachableAddress = addr;
-						return addr;
-					}
-					sock.close();
-				} catch (IOException e) {
-					break;
-				}
-			}
-			return null;
-		}
 
 		public int scanProtocolVersion() {
 			// Try partial handshake
 
 			// Ping
-			if (ping() == -1)
+			if (ping() == -1 || address == null)
 				return -1;
 
 			// Contact server
 			try {
 				Socket sock = SSLSocketFactory.getDefault().createSocket();
-				sock.connect(new InetSocketAddress(reachableAddress, port), 1000);
+				sock.connect(new InetSocketAddress(address, port), 1000);
 				if (sock.isConnected()) {
 					byte[] magic = "NEXUS_LN".getBytes("UTF-8");
 					sock.getOutputStream().write(magic);
@@ -263,23 +222,18 @@ public class NexusClientBuilder {
 		public long ping() {
 			long ping = -1;
 
-			for (String addr : addresses) {
-				try {
-					long pingStart = System.currentTimeMillis();
-					Socket sock = SSLSocketFactory.getDefault().createSocket();
-					sock.connect(new InetSocketAddress(addr, port), 1000);
-					if (sock.isConnected()) {
-						sock.close();
-						long cping = System.currentTimeMillis() - pingStart;
-						if (cping < ping || ping == -1) {
-							ping = cping;
-							reachableAddress = addr;
-						}
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-					break;
+			try {
+				long pingStart = System.currentTimeMillis();
+				Socket sock = SSLSocketFactory.getDefault().createSocket();
+				sock.connect(new InetSocketAddress(address, port), 1000);
+				if (sock.isConnected()) {
+					sock.close();
+					long cping = System.currentTimeMillis() - pingStart;
+					if (cping < ping || ping == -1)
+						ping = cping;
 				}
+				sock.close();
+			} catch (IOException e) {
 			}
 
 			return ping;
@@ -292,90 +246,8 @@ public class NexusClientBuilder {
 		boolean foundServer = false;
 		ServerAddress addr = new ServerAddress();
 
-		// Try multicast
-		if (tryMulticastScan) {
-			// Multicast detector
-			try {
-				ArrayList<String> msgs = new ArrayList<String>();
-				ArrayList<NexusInstance> instances = new ArrayList<NexusInstance>();
-
-				InetSocketAddress grp = new InetSocketAddress(InetAddress.getByName("224.0.2.232"), 14524);
-				MulticastSocket sock = new MulticastSocket(14524);
-				sock.setSoTimeout(3000);
-
-				Enumeration<NetworkInterface> interfaces_enumeration = NetworkInterface.getNetworkInterfaces();
-				ArrayList<NetworkInterface> interfaces = new ArrayList<NetworkInterface>();
-				while (interfaces_enumeration.hasMoreElements()) {
-					interfaces.add(interfaces_enumeration.nextElement());
-				}
-
-				for (NetworkInterface i : interfaces)
-					try {
-						sock.joinGroup(grp, i);
-					} catch (Exception e) {
-					}
-
-				for (int i = 0; i < 5; i++) {
-					byte[] buf = new byte[10 * 1024];
-					try {
-						DatagramPacket pkt = new DatagramPacket(buf, buf.length);
-						sock.receive(pkt);
-
-						String message = new String(pkt.getData(), 0, pkt.getLength(), "UTF-8");
-						if (!msgs.contains(message)) {
-							msgs.add(message);
-							i = 0;
-
-							if (message.split("\n").length == 3) {
-								String addrs = message.split("\n")[0];
-								String port = message.split("\n")[1];
-								String cid = message.split("\n")[2];
-
-								if (client.getConnectionID() != null && !cid.equals(client.getConnectionID()))
-									continue;
-
-								if (port.matches("^[0-9]+$")) {
-									msgs.add(message);
-									NexusInstance inst = new NexusInstance();
-									inst.port = Integer.parseInt(port);
-									inst.addresses = addrs.split("\0");
-									if (inst.scanProtocolVersion() == NexusClient.PROTOCOL_VERSION)
-										instances.add(inst);
-								}
-							}
-						}
-					} catch (IOException | BufferUnderflowException e) {
-						break;
-					}
-					try {
-						Thread.sleep(1);
-					} catch (InterruptedException e) {
-					}
-				}
-
-				for (NetworkInterface i : interfaces)
-					try {
-						sock.leaveGroup(grp, i);
-					} catch (Exception e) {
-					}
-				sock.close();
-
-				instances.sort((t1, t2) -> Long.compare(t1.ping(), t2.ping()));
-				for (NexusInstance inst : instances) {
-					long ping = inst.ping();
-					if (ping != -1) {
-						addr.address = inst.findAddress();
-						addr.port = inst.port;
-						foundServer = true;
-						break;
-					}
-				}
-			} catch (IOException e) {
-			}
-		}
-
 		// Server list scan
-		if ((!foundServer || !tryMulticastScan) && tryServerList) {
+		if (!foundServer && tryServerList) {
 			// Server list-based detector
 			try {
 				InputStream strm = new URL(serverListURL).openStream();
@@ -398,7 +270,7 @@ public class NexusClientBuilder {
 
 						NexusInstance inst = new NexusInstance();
 						inst.port = serverPort;
-						inst.addresses = new String[] { serverAddr };
+						inst.address = serverAddr;
 						if (inst.scanProtocolVersion() == NexusClient.PROTOCOL_VERSION)
 							instances.add(inst);
 					}
@@ -408,7 +280,7 @@ public class NexusClientBuilder {
 				for (NexusInstance inst : instances) {
 					long ping = inst.ping();
 					if (ping != -1) {
-						addr.address = inst.findAddress();
+						addr.address = inst.address;
 						addr.port = inst.port;
 						foundServer = true;
 						break;

@@ -265,10 +265,10 @@ public class NexusClient {
 									break;
 								}
 							}
-							try {
-								Thread.sleep(100);
-							} catch (InterruptedException e) {
-							}
+						}
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
 						}
 						if (timeSincePing >= (30 * 1000)) {
 							// Call disconnect

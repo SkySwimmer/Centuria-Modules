@@ -53,7 +53,8 @@ public class GcsForFeralModule implements ICenturiaModule {
 				String id = ele.getAsString();
 
 				// Check GC
-				if (DMManager.getInstance().dmExists(id))
+				if (DMManager.getInstance().dmExists(id) && Stream.of(DMManager.getInstance().getDMParticipants(id))
+						.anyMatch(t -> t.equals(event.getAccount().getAccountID())))
 					leaveGC(id, event.getAccount());
 			}
 		}
@@ -68,7 +69,8 @@ public class GcsForFeralModule implements ICenturiaModule {
 				String id = ele.getAsString();
 
 				// Check GC
-				if (DMManager.getInstance().dmExists(id))
+				if (DMManager.getInstance().dmExists(id) && Stream.of(DMManager.getInstance().getDMParticipants(id))
+						.anyMatch(t -> t.equals(event.getAccount().getAccountID())))
 					leaveGC(id, event.getAccount());
 			}
 		}

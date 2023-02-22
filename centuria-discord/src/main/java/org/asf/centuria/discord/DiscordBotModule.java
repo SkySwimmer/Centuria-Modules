@@ -9,6 +9,7 @@ import java.util.Scanner;
 import org.asf.centuria.Centuria;
 import org.asf.centuria.discord.applications.ApplicationManager;
 import org.asf.centuria.discord.handlers.api.AppealHandler;
+import org.asf.centuria.discord.handlers.api.AppealStatusHandler;
 import org.asf.centuria.discord.handlers.api.ForgotPasswordHandler;
 import org.asf.centuria.discord.handlers.discord.CommandHandler;
 import org.asf.centuria.discord.handlers.discord.InteractionButtonHandler;
@@ -101,6 +102,7 @@ public class DiscordBotModule implements ICenturiaModule {
 		EventBus.getInstance().addEventReceiver(new AnnouncementHandlers());
 		EventBus.getInstance().addEventReceiver(new GamePacketHandlers());
 		EventBus.getInstance().addEventReceiver(new AppealHandler());
+		EventBus.getInstance().addEventReceiver(new AppealStatusHandler());
 
 		// Applications
 		if (!new File("applications/codes").exists())

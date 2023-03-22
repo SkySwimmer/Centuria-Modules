@@ -61,33 +61,11 @@ dependencies {
 	implementation name: "Centuria"
 	implementation name: "ConnectiveHTTP"
 	implementation name: "RatsMemory"
-	implementation name: "HttpBasicFileModule"
-	
-	implementation group: 'org.asf.cyan', name: 'CyanComponents', version: '1.0.0.A8'
-	implementation group: 'org.asf.cyan', name: 'CyanUtil', version: '1.0.0.A19'
-	implementation group: 'org.asf.cyan', name: 'CCFG', version: '1.0.0.A17'
-	implementation group: 'org.asf.cyan', name: 'Fluid', version: '1.0.0.A27'
 	
 	implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.17.0'
 	implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.17.0'
 	
-	implementation 'org.ow2.asm:asm:9.1'
-	implementation 'org.ow2.asm:asm-tree:9.1'
-	implementation 'org.ow2.asm:asm-commons:9.1'
 	implementation group: 'com.google.code.gson', name: 'gson', version: '2.9.0'
-	implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-xml', version: '2.13.3'
-	
-	implementation group: 'javax.activation', name: 'activation', version: '1.1.1'
-	
-	implementation group: 'org.asf.aos.util.service', name: 'aosutil-service-SLIB-UTIL', version: '0.0.0.12'
-	implementation group: 'org.apache.commons', name: 'commons-compress', version: '1.21'	
-	implementation group: 'org.tukaani', name: 'xz', version: '1.9'
-	implementation group: 'org.joml', name: 'joml', version: '1.10.4'
-	
-	implementation group: 'org.reflections', name: 'reflections', version: '0.10.2'
-	testImplementation group: 'org.slf4j', name: 'slf4j-nop', version: '1.7.36'
-	
-	implementation group: 'net.objecthunter', name: 'exp4j', version: '0.4.8'
 }
 
 createEclipseLaunches {

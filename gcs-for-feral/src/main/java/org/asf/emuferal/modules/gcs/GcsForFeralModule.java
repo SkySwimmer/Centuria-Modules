@@ -82,25 +82,45 @@ public class GcsForFeralModule implements ICenturiaModule {
 
 		// Finds gcs
 		if (event.getAccount().getSaveSharedInventory().containsItem("gcs")) {
-			// Join gcs
+			// Load and sanitize gcs
 			ArrayList<JsonElement> toRemove = new ArrayList<JsonElement>();
 			JsonArray arr = event.getAccount().getSaveSharedInventory().getItem("gcs").getAsJsonArray();
 			for (JsonElement ele : arr) {
 				String id = ele.getAsString();
 
-				// Check existence
+				// Clean GC participants
+				int participantC = 0;
 				if (DMManager.getInstance().dmExists(id)) {
-					// Join it
-					event.getClient().joinRoom(id, true);
-				} else {
+					String[] participants = DMManager.getInstance().getDMParticipants(id);
+					participantC = participants.length;
+					for (String participant : participants) {
+						if (!participant.startsWith("plaintext:")) {
+							// Check account
+							if (AccountManager.getInstance().getAccount(participant) == null) {
+								participantC--;
+								DMManager.getInstance().removeParticipant(id, participant);
+							}
+						}
+					}
+				}
+
+				// Check existence and validity
+				if (participantC <= 1) {
 					// Remove it
 					toRemove.add(ele);
+					continue;
 				}
+
+				// Join it
+				event.getClient().joinRoom(id, true);
 			}
 
-			// Remove nonexistent
-			for (JsonElement ele : toRemove)
+			// Remove nonexistent and invalid gcs
+			for (JsonElement ele : toRemove) {
+				if (DMManager.getInstance().dmExists(ele.getAsString()))
+					DMManager.getInstance().deleteDM(ele.getAsString());
 				arr.remove(ele);
+			}
 
 			// Save if needed
 			if (toRemove.size() != 0)

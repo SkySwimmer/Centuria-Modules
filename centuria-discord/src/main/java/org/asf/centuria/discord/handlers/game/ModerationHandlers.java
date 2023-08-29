@@ -143,7 +143,7 @@ public class ModerationHandlers implements IEventReceiver {
 		else if (data == null)
 			message += "\n";
 		String issuerStr = "**" + issuer + "**";
-		if (!issuerStr.equals("SYSTEM")) {
+		if (!issuer.equals("SYSTEM")) {
 			issuerStr = "`" + issuer + "`";
 			CenturiaAccount issuerAcc = AccountManager.getInstance().getAccount(issuer);
 			if (issuerAcc != null) {

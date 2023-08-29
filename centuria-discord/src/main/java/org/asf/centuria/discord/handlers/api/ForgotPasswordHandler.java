@@ -1,8 +1,6 @@
 package org.asf.centuria.discord.handlers.api;
 
 import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.URLDecoder;
 
 import org.asf.centuria.accounts.AccountManager;
@@ -14,22 +12,22 @@ import org.asf.centuria.discord.UserIpBlockUtils;
 import org.asf.centuria.modules.eventbus.EventListener;
 import org.asf.centuria.modules.eventbus.IEventReceiver;
 import org.asf.centuria.modules.events.servers.APIServerStartupEvent;
-import org.asf.rats.processors.HttpUploadProcessor;
+import org.asf.connective.RemoteClient;
+import org.asf.connective.processors.HttpPushProcessor;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.spec.MessageCreateSpec;
 
-public class ForgotPasswordHandler extends HttpUploadProcessor implements IEventReceiver {
+public class ForgotPasswordHandler extends HttpPushProcessor implements IEventReceiver {
 
 	@Override
-	public void process(String contentType, Socket client, String method) {
+	public void process(String pth, String method, RemoteClient client, String contentType) {
 		// Parse account name
 		String path = this.getRequestPath().substring(path().length());
 		if (path.isEmpty()) {
-			setResponseMessage("Bad Request");
-			setResponseCode(400);
+			this.setResponseStatus(400, "Bad request");
 			return;
 		}
 		path = path.substring(1);
@@ -37,16 +35,14 @@ public class ForgotPasswordHandler extends HttpUploadProcessor implements IEvent
 		try {
 			loginName = URLDecoder.decode(path, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			setResponseMessage("Bad Request");
-			setResponseCode(400);
+			this.setResponseStatus(400, "Bad request");
 			return;
 		}
 
 		// Find account
 		String uuid = AccountManager.getInstance().getUserByLoginName(loginName);
 		if (uuid == null) {
-			setResponseMessage("Not Found");
-			setResponseCode(404);
+			this.setResponseStatus(404, "Not found");
 			return;
 		}
 
@@ -54,11 +50,9 @@ public class ForgotPasswordHandler extends HttpUploadProcessor implements IEvent
 		CenturiaAccount account = AccountManager.getInstance().getAccount(uuid);
 		if (LinkUtils.isPairedWithDiscord(account)) {
 			// Check IP block
-			if (UserIpBlockUtils.isBlocked(account,
-					((InetSocketAddress) client.getRemoteSocketAddress()).getAddress().getHostAddress())) {
+			if (UserIpBlockUtils.isBlocked(account, client.getRemoteAddress())) {
 				// Deny access
-				setResponseMessage("Forbidden");
-				setResponseCode(403);
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
@@ -75,8 +69,7 @@ public class ForgotPasswordHandler extends HttpUploadProcessor implements IEvent
 				message += "A account password reset request was just made, here follow the details:\n";
 				message += "**Account login name:** `" + account.getLoginName() + "`\n";
 				message += "**Ingame player name:** `" + account.getDisplayName() + "`\n";
-				message += "**Requested from IP:** `"
-						+ ((InetSocketAddress) client.getRemoteSocketAddress()).getAddress().getHostAddress() + "`\n";
+				message += "**Requested from IP:** `" + client.getRemoteAddress() + "`\n";
 				message += "**Last login time:** "
 						+ (account.getLastLoginTime() == -1 ? "`Unknown`" : "<t:" + account.getLastLoginTime() + ">")
 						+ "\n";
@@ -97,12 +90,11 @@ public class ForgotPasswordHandler extends HttpUploadProcessor implements IEvent
 				}, 5 * 60);
 
 				// Buttons
-				msg.addComponent(ActionRow.of(
-						Button.danger("confirmresetpassword/" + userID + "/" + code, "Reset password"),
-						Button.danger("confirmblockip/" + userID + "/" + account.getAccountID() + "/"
-								+ ((InetSocketAddress) client.getRemoteSocketAddress()).getAddress().getHostAddress(),
-								"Block IP and Dismiss"),
-						Button.primary("dismissDelete", "Dismiss")));
+				msg.addComponent(
+						ActionRow.of(Button.danger("confirmresetpassword/" + userID + "/" + code, "Reset password"),
+								Button.danger("confirmblockip/" + userID + "/" + account.getAccountID() + "/"
+										+ client.getRemoteAddress(), "Block IP and Dismiss"),
+								Button.primary("dismissDelete", "Dismiss")));
 
 				// Send response
 				DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block().getPrivateChannel().block()
@@ -118,7 +110,7 @@ public class ForgotPasswordHandler extends HttpUploadProcessor implements IEvent
 	}
 
 	@Override
-	public HttpUploadProcessor createNewInstance() {
+	public HttpPushProcessor createNewInstance() {
 		return new ForgotPasswordHandler();
 	}
 

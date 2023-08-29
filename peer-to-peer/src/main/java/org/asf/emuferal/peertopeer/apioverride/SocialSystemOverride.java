@@ -1,25 +1,25 @@
 package org.asf.emuferal.peertopeer.apioverride;
 
 import java.io.UnsupportedEncodingException;
-import java.net.Socket;
 import java.util.Base64;
 import org.asf.centuria.Centuria;
 import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.networking.http.api.FallbackAPIProcessor;
+import org.asf.connective.RemoteClient;
+import org.asf.connective.processors.HttpPushProcessor;
 import org.asf.emuferal.peertopeer.PeerToPeerModule;
-import org.asf.rats.processors.HttpUploadProcessor;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-public class SocialSystemOverride extends HttpUploadProcessor {
+public class SocialSystemOverride extends HttpPushProcessor {
 
 	private FallbackAPIProcessor fallback = new FallbackAPIProcessor();
 
 	@Override
-	public void process(String contentType, Socket client, String method) {
+	public void process(String pth, String method, RemoteClient client, String contentType) {
 		String path = this.getRequestPath();
 		AccountManager manager = AccountManager.getInstance();
 
@@ -29,8 +29,7 @@ public class SocialSystemOverride extends HttpUploadProcessor {
 				// Find account
 				CenturiaAccount acc = verifyAndGetAcc(manager);
 				if (acc == null) {
-					this.setResponseCode(401);
-					this.setResponseMessage("Access denied");
+					this.setResponseStatus(401, "Unauthorized");
 					return;
 				}
 
@@ -51,8 +50,7 @@ public class SocialSystemOverride extends HttpUploadProcessor {
 				// Find account
 				CenturiaAccount acc = verifyAndGetAcc(manager);
 				if (acc == null) {
-					this.setResponseCode(401);
-					this.setResponseMessage("Access denied");
+					this.setResponseStatus(401, "Unauthorized");
 					return;
 				}
 
@@ -70,19 +68,19 @@ public class SocialSystemOverride extends HttpUploadProcessor {
 				}
 			}
 
-			FallbackAPIProcessor proc = (FallbackAPIProcessor) fallback.instanciate(getServer(), getRequest());
-			proc.process(contentType, client, method);
-			setResponse(proc.getResponse());
+			FallbackAPIProcessor proc = (FallbackAPIProcessor) fallback.instantiate(getServer(), getRequest(),
+					getResponse());
+			proc.process(path, method, client);
 		} catch (Exception e) {
 			if (Centuria.debugMode) {
 				System.err.println("[FALLBACKAPI] ERROR : " + e.getMessage() + " )");
 			}
-			Centuria.logger.error(getRequest().path + " failed", e);
+			Centuria.logger.error(getRequest().getRequestPath() + " failed", e);
 		}
 	}
 
 	@Override
-	public HttpUploadProcessor createNewInstance() {
+	public HttpPushProcessor createNewInstance() {
 		return new SocialSystemOverride();
 	}
 
@@ -92,7 +90,7 @@ public class SocialSystemOverride extends HttpUploadProcessor {
 	}
 
 	@Override
-	public boolean supportsGet() {
+	public boolean supportsNonPush() {
 		return true;
 	}
 

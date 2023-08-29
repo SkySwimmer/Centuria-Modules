@@ -17,7 +17,7 @@ plugins {
 
 
 // Basic information
-version = "1.0.0.A1"
+version = "1.0.0.A2"
 group = "org.asf.centuria.playasnpcs"
 
 ext.modulePackage = "org.asf.centuria.playasnpcs"
@@ -59,7 +59,7 @@ dependencies {
 	testImplementation group: 'junit', name: 'junit', version: '4.13.2'
 
 	implementation name: "Centuria"
-	implementation name: "ConnectiveHTTP"
+	implementation name: "connective-http"
 	
 	implementation group: 'com.google.code.gson', name: 'gson', version: '2.9.0'
 }

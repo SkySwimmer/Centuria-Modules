@@ -1,6 +1,5 @@
 package org.asf.centuria.discord.handlers.api;
 
-import java.net.Socket;
 import java.util.Base64;
 
 import org.asf.centuria.Centuria;
@@ -9,15 +8,16 @@ import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.modules.eventbus.EventListener;
 import org.asf.centuria.modules.eventbus.IEventReceiver;
 import org.asf.centuria.modules.events.servers.APIServerStartupEvent;
-import org.asf.rats.processors.HttpUploadProcessor;
+import org.asf.connective.RemoteClient;
+import org.asf.connective.processors.HttpPushProcessor;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class AppealStatusHandler extends HttpUploadProcessor implements IEventReceiver {
+public class AppealStatusHandler extends HttpPushProcessor implements IEventReceiver {
 
 	@Override
-	public void process(String contentType, Socket client, String method) {
+	public void process(String path, String method, RemoteClient client, String contentType) {
 		try {
 			// Load manager
 			AccountManager manager = AccountManager.getInstance();
@@ -25,15 +25,13 @@ public class AppealStatusHandler extends HttpUploadProcessor implements IEventRe
 			// Parse JWT payload
 			String token = this.getHeader("Authorization").substring("Bearer ".length());
 			if (token.isBlank()) {
-				this.setResponseCode(403);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
 			// Parse token
 			if (token.isBlank()) {
-				this.setResponseCode(403);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
@@ -41,8 +39,7 @@ public class AppealStatusHandler extends HttpUploadProcessor implements IEventRe
 			String verifyD = token.split("\\.")[0] + "." + token.split("\\.")[1];
 			String sig = token.split("\\.")[2];
 			if (!Centuria.verify(verifyD.getBytes("UTF-8"), Base64.getUrlDecoder().decode(sig))) {
-				this.setResponseCode(403);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
@@ -51,8 +48,7 @@ public class AppealStatusHandler extends HttpUploadProcessor implements IEventRe
 					.parseString(new String(Base64.getUrlDecoder().decode(token.split("\\.")[1]), "UTF-8"))
 					.getAsJsonObject();
 			if (!jwtPl.has("exp") || jwtPl.get("exp").getAsLong() < System.currentTimeMillis() / 1000) {
-				this.setResponseCode(403);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
@@ -66,37 +62,35 @@ public class AppealStatusHandler extends HttpUploadProcessor implements IEventRe
 			// Check existence
 			if (id == null) {
 				// Invalid details
-				this.setBody("text/json", "{\"error\":\"invalid_credential\"}");
-				this.setResponseCode(422);
+				this.setResponseContent("text/json", "{\"error\":\"invalid_credential\"}");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
 			// Find account
 			CenturiaAccount acc = manager.getAccount(id);
 			if (acc == null) {
-				this.setResponseCode(401);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
 			// Check lock
 			if (!acc.getSaveSharedInventory().containsItem("appeallock")) {
 				// Invalid details
-				this.setBody("text/json", "{\"error\":\"no_appeal_sent\"}");
-				this.setResponseCode(400);
+				this.setResponseContent("text/json", "{\"error\":\"no_appeal_sent\"}");
+				this.setResponseStatus(400, "Bad request");
 				return;
 			}
 
 			// Set response
-			this.setBody("text/json", acc.getSaveSharedInventory().getItem("appeallock").toString());
+			this.setResponseContent("text/json", acc.getSaveSharedInventory().getItem("appeallock").toString());
 		} catch (Exception e) {
-			setResponseCode(500);
-			setResponseMessage("Internal Server Error");
+			setResponseStatus(500, "Internal Server Error");
 		}
 	}
 
 	@Override
-	public boolean supportsGet() {
+	public boolean supportsNonPush() {
 		return true;
 	}
 
@@ -106,7 +100,7 @@ public class AppealStatusHandler extends HttpUploadProcessor implements IEventRe
 	}
 
 	@Override
-	public HttpUploadProcessor createNewInstance() {
+	public HttpPushProcessor createNewInstance() {
 		return new AppealStatusHandler();
 	}
 

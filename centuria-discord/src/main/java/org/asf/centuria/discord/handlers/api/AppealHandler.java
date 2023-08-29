@@ -3,7 +3,6 @@ package org.asf.centuria.discord.handlers.api;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.Socket;
 import java.util.Base64;
 
 import org.asf.centuria.Centuria;
@@ -15,8 +14,8 @@ import org.asf.centuria.discord.ServerConfigUtils;
 import org.asf.centuria.modules.eventbus.EventListener;
 import org.asf.centuria.modules.eventbus.IEventReceiver;
 import org.asf.centuria.modules.events.servers.APIServerStartupEvent;
-import org.asf.rats.ConnectiveHTTPServer;
-import org.asf.rats.processors.HttpUploadProcessor;
+import org.asf.connective.RemoteClient;
+import org.asf.connective.processors.HttpPushProcessor;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -27,22 +26,21 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.spec.MessageCreateSpec;
 
-public class AppealHandler extends HttpUploadProcessor implements IEventReceiver {
+public class AppealHandler extends HttpPushProcessor implements IEventReceiver {
 
 	@Override
-	public void process(String contentType, Socket client, String method) {
+	public void process(String path, String method, RemoteClient client, String contentType) {
 		try {
 			// Parse body
 			ByteArrayOutputStream strm = new ByteArrayOutputStream();
-			ConnectiveHTTPServer.transferRequestBody(getHeaders(), getRequestBodyStream(), strm);
+			getRequest().transferRequestBody(strm);
 			byte[] body = strm.toByteArray();
 			strm.close();
 
 			// Parse body
 			JsonObject request = JsonParser.parseString(new String(body, "UTF-8")).getAsJsonObject();
 			if (!request.has("short_why") || !request.has("appeal") || !request.has("will_you_follow_rules")) {
-				this.setResponseCode(400);
-				this.setResponseMessage("Bad request");
+				this.setResponseStatus(400, "Bad request");
 				return;
 			}
 
@@ -52,15 +50,13 @@ public class AppealHandler extends HttpUploadProcessor implements IEventReceiver
 			// Parse JWT payload
 			String token = this.getHeader("Authorization").substring("Bearer ".length());
 			if (token.isBlank()) {
-				this.setResponseCode(403);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
 			// Parse token
 			if (token.isBlank()) {
-				this.setResponseCode(403);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
@@ -68,8 +64,7 @@ public class AppealHandler extends HttpUploadProcessor implements IEventReceiver
 			String verifyD = token.split("\\.")[0] + "." + token.split("\\.")[1];
 			String sig = token.split("\\.")[2];
 			if (!Centuria.verify(verifyD.getBytes("UTF-8"), Base64.getUrlDecoder().decode(sig))) {
-				this.setResponseCode(403);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
@@ -78,8 +73,7 @@ public class AppealHandler extends HttpUploadProcessor implements IEventReceiver
 					.parseString(new String(Base64.getUrlDecoder().decode(token.split("\\.")[1]), "UTF-8"))
 					.getAsJsonObject();
 			if (!jwtPl.has("exp") || jwtPl.get("exp").getAsLong() < System.currentTimeMillis() / 1000) {
-				this.setResponseCode(403);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
@@ -93,32 +87,31 @@ public class AppealHandler extends HttpUploadProcessor implements IEventReceiver
 			// Check existence
 			if (id == null) {
 				// Invalid details
-				this.setBody("text/json", "{\"error\":\"invalid_credential\"}");
-				this.setResponseCode(422);
+				this.setResponseContent("text/json", "{\"error\":\"invalid_credential\"}");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
 			// Find account
 			CenturiaAccount acc = manager.getAccount(id);
 			if (acc == null) {
-				this.setResponseCode(401);
-				this.setResponseMessage("Access denied");
+				this.setResponseStatus(401, "Unauthorized");
 				return;
 			}
 
 			// Check penalty
 			if (!acc.isBanned() && !acc.isMuted()) {
 				// Invalid details
-				this.setBody("text/json", "{\"error\":\"no_penalty\"}");
-				this.setResponseCode(400);
+				this.setResponseContent("text/json", "{\"error\":\"no_penalty\"}");
+				this.setResponseStatus(400, "Bad request");
 				return;
 			}
 
 			// Check lock
 			if (acc.getSaveSharedInventory().containsItem("appeallock")) {
 				// Invalid details
-				this.setBody("text/json", "{\"error\":\"already_appealed\"}");
-				this.setResponseCode(400);
+				this.setResponseContent("text/json", "{\"error\":\"already_appealed\"}");
+				this.setResponseStatus(400, "Bad request");
 				return;
 			}
 
@@ -196,10 +189,9 @@ public class AppealHandler extends HttpUploadProcessor implements IEventReceiver
 				}
 			}
 
-			this.setBody("text/json", "{\"status\":\"pending\"}");
+			this.setResponseContent("text/json", "{\"status\":\"pending\"}");
 		} catch (Exception e) {
-			setResponseCode(500);
-			setResponseMessage("Internal Server Error");
+			setResponseStatus(500, "Internal Server Error");
 		}
 	}
 
@@ -209,7 +201,7 @@ public class AppealHandler extends HttpUploadProcessor implements IEventReceiver
 	}
 
 	@Override
-	public HttpUploadProcessor createNewInstance() {
+	public HttpPushProcessor createNewInstance() {
 		return new AppealHandler();
 	}
 

@@ -352,7 +352,7 @@ public class LinkUtils {
 	 */
 	public static boolean isPairedWithCenturia(String userID) {
 		return accountLinks.has(userID)
-				&& AccountManager.getInstance().getAccount(accountLinks.get(userID).getAsString()) == null;
+				&& AccountManager.getInstance().getAccount(accountLinks.get(userID).getAsString()) != null;
 	}
 
 	/**

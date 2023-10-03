@@ -17,7 +17,7 @@ plugins {
 
 
 // Basic information
-version = "1.0.0.A2"
+version = "1.0.0.A3"
 group = "org.asf.centuria"
 
 ext.modulePackage = "org.asf.centuria.discord"

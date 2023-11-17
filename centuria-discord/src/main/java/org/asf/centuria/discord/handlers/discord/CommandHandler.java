@@ -319,14 +319,15 @@ public class CommandHandler {
 					while (codeLong < 10000)
 						codeLong = rnd.nextLong();
 					code = Long.toString(codeLong, 16);
-					try {
+					synchronized (SendMessage.clearanceCodes) {
 						if (!SendMessage.clearanceCodes.contains(code))
 							break;
-					} catch (ConcurrentModificationException e) {
 					}
 					code = Long.toString(rnd.nextLong(), 16);
 				}
-				SendMessage.clearanceCodes.add(code);
+				synchronized (SendMessage.clearanceCodes) {
+					SendMessage.clearanceCodes.add(code);
+				}
 				event.deferReply().block();
 				EventBus.getInstance().dispatchEvent(new MiscModerationEvent("clearancecode.generated",
 						"Admin Clearance Code Generated", Map.of(), modacc.getAccountID(), null));
@@ -334,10 +335,9 @@ public class CommandHandler {
 				final String cFinal = code;
 				Thread th = new Thread(() -> {
 					for (int i = 0; i < 12000; i++) {
-						try {
+						synchronized (SendMessage.clearanceCodes) {
 							if (!SendMessage.clearanceCodes.contains(cFinal))
 								return;
-						} catch (ConcurrentModificationException e) {
 						}
 						try {
 							Thread.sleep(10);

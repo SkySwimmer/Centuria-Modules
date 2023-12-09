@@ -95,14 +95,14 @@ public class DiscordBotModule implements ICenturiaModule {
 	@Override
 	public void preInit() {
 		// Bind event handlers
-		EventBus.getInstance().addEventReceiver(new ModuleCommands());
-		EventBus.getInstance().addEventReceiver(new ModerationHandlers());
-		EventBus.getInstance().addEventReceiver(new ForgotPasswordHandler());
-		EventBus.getInstance().addEventReceiver(new LoginEventHandler());
-		EventBus.getInstance().addEventReceiver(new AnnouncementHandlers());
-		EventBus.getInstance().addEventReceiver(new GamePacketHandlers());
-		EventBus.getInstance().addEventReceiver(new AppealHandler());
-		EventBus.getInstance().addEventReceiver(new AppealStatusHandler());
+		EventBus.getInstance().addAllEventsFromReceiver(new ModuleCommands());
+		EventBus.getInstance().addAllEventsFromReceiver(new ModerationHandlers());
+		EventBus.getInstance().addAllEventsFromReceiver(new ForgotPasswordHandler());
+		EventBus.getInstance().addAllEventsFromReceiver(new LoginEventHandler());
+		EventBus.getInstance().addAllEventsFromReceiver(new AnnouncementHandlers());
+		EventBus.getInstance().addAllEventsFromReceiver(new GamePacketHandlers());
+		EventBus.getInstance().addAllEventsFromReceiver(new AppealHandler());
+		EventBus.getInstance().addAllEventsFromReceiver(new AppealStatusHandler());
 
 		// Applications
 		if (!new File("applications/codes").exists())

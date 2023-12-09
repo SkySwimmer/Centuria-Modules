@@ -93,7 +93,7 @@ public class AccountPanelHandler {
 							// Load avatar helper
 							try {
 								InputStream strm = InventoryItemDownloadPacket.class.getClassLoader()
-										.getResourceAsStream("defaultitems/avatarhelper.json");
+										.getResourceAsStream("content/avatars/avatars.json");
 								JsonObject helper = JsonParser.parseString(new String(strm.readAllBytes(), "UTF-8"))
 										.getAsJsonObject().get("Avatars").getAsJsonObject();
 								strm.close();

@@ -88,7 +88,7 @@ public class PlayAsNpcs implements ICenturiaModule {
 
 			// Save avatar to inventory
 			Player plr = event.getAccount().getOnlinePlayerInstance();
-			JsonArray items = plr.account.getPlayerInventory().getItem("avatars").getAsJsonArray();
+			JsonArray items = plr.account.getSaveSpecificInventory().getItem("avatars").getAsJsonArray();
 			JsonObject ts = new JsonObject();
 			ts.addProperty("ts", System.currentTimeMillis());
 			JsonObject nm = new JsonObject();
@@ -109,7 +109,7 @@ public class PlayAsNpcs implements ICenturiaModule {
 			items.add(avatar);
 
 			// Save
-			event.getAccount().getPlayerInventory().setItem("avatars", items);
+			event.getAccount().getSaveSpecificInventory().setItem("avatars", items);
 			InventoryItemPacket pk = new InventoryItemPacket();
 			pk.item = items;
 			plr.client.sendPacket(pk);
@@ -121,7 +121,7 @@ public class PlayAsNpcs implements ICenturiaModule {
 			Player plr = event.getAccount().getOnlinePlayerInstance();
 			ArrayList<String> removedItems = new ArrayList<String>();
 			ArrayList<JsonObject> removed = new ArrayList<JsonObject>();
-			JsonArray items = plr.account.getPlayerInventory().getItem("avatars").getAsJsonArray();
+			JsonArray items = plr.account.getSaveSpecificInventory().getItem("avatars").getAsJsonArray();
 			for (JsonElement ele : items) {
 				JsonObject avatar = ele.getAsJsonObject();
 				JsonObject info = avatar.get("components").getAsJsonObject().get("AvatarLook").getAsJsonObject()
@@ -142,7 +142,7 @@ public class PlayAsNpcs implements ICenturiaModule {
 			event.getAccount().getOnlinePlayerInstance().client.sendPacket(pkt);
 
 			// Save
-			event.getAccount().getPlayerInventory().setItem("avatars", items);
+			event.getAccount().getSaveSpecificInventory().setItem("avatars", items);
 			event.respond("Avatars updated");
 		}
 	}

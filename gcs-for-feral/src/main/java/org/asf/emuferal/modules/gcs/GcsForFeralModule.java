@@ -21,6 +21,7 @@ import org.asf.centuria.modules.events.chat.ChatMessageReceivedEvent;
 import org.asf.centuria.modules.events.chatcommands.ChatCommandEvent;
 import org.asf.centuria.modules.events.chatcommands.ModuleCommandSyntaxListEvent;
 import org.asf.centuria.networking.chatserver.ChatClient;
+import org.asf.centuria.networking.chatserver.rooms.ChatRoomTypes;
 import org.asf.centuria.social.SocialManager;
 
 import com.google.gson.JsonArray;
@@ -36,7 +37,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 
 	@Override
 	public String version() {
-		return "1.0.0.A1";
+		return "1.0.0.A2";
 	}
 
 	@Override
@@ -112,7 +113,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 				}
 
 				// Join it
-				event.getClient().joinRoom(id, true);
+				event.getClient().joinRoom(id, ChatRoomTypes.PRIVATE_CHAT);
 			}
 
 			// Remove nonexistent and invalid gcs
@@ -133,8 +134,10 @@ public class GcsForFeralModule implements ICenturiaModule {
 	public void registerCommands(ModuleCommandSyntaxListEvent event) {
 		// Register commands
 		event.addCommandSyntaxMessage("gccreate/gcc \"<name>\"");
+		event.addCommandSyntaxMessage("gcrename/gcr \"<new name>\"");
 		event.addCommandSyntaxMessage("gcadd/gca \"<player>\"");
 		event.addCommandSyntaxMessage("gckick/gck \"<player>\"");
+		event.addCommandSyntaxMessage("gclistmembers/gclm");
 		event.addCommandSyntaxMessage("gcleave/gcl");
 		event.addCommandSyntaxMessage("gclist");
 	}
@@ -220,8 +223,12 @@ public class GcsForFeralModule implements ICenturiaModule {
 		case "gck":
 		case "gcleave":
 		case "gcl":
+		case "gclistmembers":
+		case "gclm":
 		case "gcadd":
 		case "gca":
+		case "gcrename":
+		case "gcr":
 			event.respond("Error: this command needs to be run from within a Group Chat.");
 			break;
 
@@ -281,8 +288,10 @@ public class GcsForFeralModule implements ICenturiaModule {
 		// Called when a message is sent by a player
 		if (isGCConvo(event.getConversationId(), event.getAccount())) {
 			// isGCConvo a gc
-			if (event.getMessage().startsWith(">") && !event.getMessage().startsWith("> ")
-					&& !event.getMessage().equals(">")) {
+			if ((event.getMessage().startsWith(">") && !event.getMessage().startsWith("> ")
+					&& !event.getMessage().equals(">"))
+					|| (event.getMessage().startsWith("/") && !event.getMessage().startsWith("/ ")
+							&& !event.getMessage().equals("/"))) {
 				// Command message
 				String cmd = event.getMessage().substring(1);
 				ArrayList<String> args = parseCommand(cmd);
@@ -292,8 +301,8 @@ public class GcsForFeralModule implements ICenturiaModule {
 					// Handle command
 					switch (cmd) {
 
-					case "gckick":
-					case "gck": {
+					case "gcrename":
+					case "gcr": {
 						// Kick player
 						event.cancel();
 
@@ -302,7 +311,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 						CenturiaAccount ownerAcc = AccountManager.getInstance().getAccount(owner);
 						if (!event.getAccount().getAccountID().equals(owner) && ownerAcc != null) {
 							// Error
-							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();
 							res.addProperty("conversationType", "private");
@@ -321,7 +330,113 @@ public class GcsForFeralModule implements ICenturiaModule {
 						// Check arguments
 						String[] cmdArgs = args.toArray(t -> new String[t]);
 						if (cmdArgs.length < 1) {
-							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+							JsonObject res = new JsonObject();
+							res.addProperty("conversationType", "private");
+							res.addProperty("conversationId", event.getConversationId());
+							res.addProperty("message",
+									"Issued chat command: " + cmd + ":\n[system] Missing argument: new name");
+							res.addProperty("source", event.getAccount().getAccountID());
+							res.addProperty("sentAt", fmt.format(new Date()));
+							res.addProperty("eventId", "chat.postMessage");
+							res.addProperty("success", true);
+							event.getClient().sendPacket(res);
+							return;
+						}
+
+						// Get and check new name
+						String newName = cmdArgs[0];
+						if (newName.length() < 3) {
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+							JsonObject res = new JsonObject();
+							res.addProperty("conversationType", "private");
+							res.addProperty("conversationId", event.getConversationId());
+							res.addProperty("message",
+									"Issued chat command: " + cmd + ":\n[system] Error: name too short");
+							res.addProperty("source", event.getAccount().getAccountID());
+							res.addProperty("sentAt", fmt.format(new Date()));
+							res.addProperty("eventId", "chat.postMessage");
+							res.addProperty("success", true);
+							event.getClient().sendPacket(res);
+							return;
+						}
+						if (newName.length() > 15) {
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+							JsonObject res = new JsonObject();
+							res.addProperty("conversationType", "private");
+							res.addProperty("conversationId", event.getConversationId());
+							res.addProperty("message",
+									"Issued chat command: " + cmd + ":\n[system] Error: name too long");
+							res.addProperty("source", event.getAccount().getAccountID());
+							res.addProperty("sentAt", fmt.format(new Date()));
+							res.addProperty("eventId", "chat.postMessage");
+							res.addProperty("success", true);
+							event.getClient().sendPacket(res);
+							return;
+						}
+
+						// Rename
+						String[] participants = DMManager.getInstance().getDMParticipants(event.getConversationId());
+						participants[0] = "plaintext:[GC] " + newName;
+						DMManager.getInstance().updateDMParticipants(event.getConversationId(), participants);
+
+						// Send update
+						JsonObject res = new JsonObject();
+						res.add("conversation", event.getServer().roomObject(event.getConversationId(),
+								ChatRoomTypes.PRIVATE_CHAT, event.getClient().getPlayer().getAccountID()));
+						res.addProperty("eventId", "conversations.get");
+						res.addProperty("success", true);
+						event.getClient().sendPacket(res);
+
+						// Send response
+						SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+						fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+						res = new JsonObject();
+						res.addProperty("conversationType", "private");
+						res.addProperty("conversationId", event.getConversationId());
+						res.addProperty("message", "Issued chat command: " + cmd + ":\n[system] Renamed the GC to "
+								+ newName + ", please note the change may not be visible right away.");
+						res.addProperty("source", event.getAccount().getAccountID());
+						res.addProperty("sentAt", fmt.format(new Date()));
+						res.addProperty("eventId", "chat.postMessage");
+						res.addProperty("success", true);
+						event.getClient().sendPacket(res);
+						break;
+					}
+
+					case "gckick":
+					case "gck": {
+						// Kick player
+						event.cancel();
+
+						// Check if owner
+						String owner = DMManager.getInstance().getDMParticipants(event.getConversationId())[1];
+						CenturiaAccount ownerAcc = AccountManager.getInstance().getAccount(owner);
+						if (!event.getAccount().getAccountID().equals(owner) && ownerAcc != null) {
+							// Error
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+							JsonObject res = new JsonObject();
+							res.addProperty("conversationType", "private");
+							res.addProperty("conversationId", event.getConversationId());
+							res.addProperty("message",
+									"Issued chat command: " + cmd + ":\n[system] Error: you are not the GC owner, only "
+											+ ownerAcc.getDisplayName() + " can use this command.");
+							res.addProperty("source", event.getAccount().getAccountID());
+							res.addProperty("sentAt", fmt.format(new Date()));
+							res.addProperty("eventId", "chat.postMessage");
+							res.addProperty("success", true);
+							event.getClient().sendPacket(res);
+							return;
+						}
+
+						// Check arguments
+						String[] cmdArgs = args.toArray(t -> new String[t]);
+						if (cmdArgs.length < 1) {
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();
 							res.addProperty("conversationType", "private");
@@ -339,7 +454,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 						// Find player
 						String id = AccountManager.getInstance().getUserByDisplayName(cmdArgs[0]);
 						if (id == null) {
-							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();
 							res.addProperty("conversationType", "private");
@@ -357,7 +472,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 						if (acc == null
 								|| !Stream.of(DMManager.getInstance().getDMParticipants(event.getConversationId()))
 										.anyMatch(t -> t.equals(id))) {
-							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();
 							res.addProperty("conversationType", "private");
@@ -373,7 +488,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 						}
 
 						// Send response
-						SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+						SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 						fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 						JsonObject res = new JsonObject();
 						res.addProperty("conversationType", "private");
@@ -400,7 +515,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 						// Check arguments
 						String[] cmdArgs = args.toArray(t -> new String[t]);
 						if (cmdArgs.length < 1) {
-							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();
 							res.addProperty("conversationType", "private");
@@ -418,7 +533,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 						// Find player
 						String id = AccountManager.getInstance().getUserByDisplayName(cmdArgs[0]);
 						if (id == null) {
-							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();
 							res.addProperty("conversationType", "private");
@@ -434,7 +549,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 						}
 						CenturiaAccount acc = AccountManager.getInstance().getAccount(id);
 						if (acc == null) {
-							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();
 							res.addProperty("conversationType", "private");
@@ -449,7 +564,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 							return;
 						}
 						if (isGCConvo(event.getConversationId(), acc)) {
-							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();
 							res.addProperty("conversationType", "private");
@@ -470,7 +585,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 								|| !manager.getPlayerIsFollowing(event.getAccount().getAccountID(), id)
 								|| manager.getPlayerIsBlocked(id, event.getAccount().getAccountID())) {
 							// Error
-							SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 							JsonObject res = new JsonObject();
 							res.addProperty("conversationType", "private");
@@ -487,7 +602,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 						}
 
 						// Send response
-						SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+						SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 						fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 						JsonObject res = new JsonObject();
 						res.addProperty("conversationType", "private");
@@ -505,6 +620,34 @@ public class GcsForFeralModule implements ICenturiaModule {
 						systemMessage(event.getConversationId(), event.getAccount().getDisplayName() + " added "
 								+ acc.getDisplayName() + " to the group chat.");
 
+						break;
+					}
+
+					case "gclistmembers":
+					case "gclm": {
+						// List members
+						event.cancel();
+
+						// Build message
+						String message = "List of GC members:";
+						String[] participants = DMManager.getInstance().getDMParticipants(event.getConversationId());
+						for (int i = 1; i < participants.length; i++) {
+							String id = participants[i];
+							CenturiaAccount acc = AccountManager.getInstance().getAccount(id);
+							if (acc != null)
+								message += "\n - " + acc.getDisplayName();
+						}
+						SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+						fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+						JsonObject res = new JsonObject();
+						res.addProperty("conversationType", "private");
+						res.addProperty("conversationId", event.getConversationId());
+						res.addProperty("message", "Issued chat command: " + cmd + ":\n[system] " + message);
+						res.addProperty("source", event.getAccount().getAccountID());
+						res.addProperty("sentAt", fmt.format(new Date()));
+						res.addProperty("eventId", "chat.postMessage");
+						res.addProperty("success", true);
+						event.getClient().sendPacket(res);
 						break;
 					}
 
@@ -532,7 +675,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 		// Join GC
 		ChatClient cl = Centuria.chatServer.getClient(acc.getAccountID());
 		if (cl != null)
-			cl.joinRoom(id, true);
+			cl.joinRoom(id, ChatRoomTypes.PRIVATE_CHAT);
 		DMManager.getInstance().addParticipant(id, acc.getAccountID());
 
 		// Send join packets
@@ -642,13 +785,13 @@ public class GcsForFeralModule implements ICenturiaModule {
 	private void systemMessage(String id, String message) {
 		if (DMManager.getInstance().dmExists(id)) {
 			// Time format
-			SimpleDateFormat fmt = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss");
+			SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 			fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 
 			// Save message
 			PrivateChatMessage msg = new PrivateChatMessage();
 			msg.content = message;
-			msg.sentAt = fmt.format(new Date());
+			msg.sentAt = System.currentTimeMillis();
 			msg.source = new UUID(0, 0).toString();
 			DMManager.getInstance().saveDMMessge(id, msg);
 
@@ -658,7 +801,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 			res.addProperty("conversationId", id);
 			res.addProperty("message", message);
 			res.addProperty("source", msg.source);
-			res.addProperty("sentAt", msg.sentAt);
+			res.addProperty("sentAt", fmt.format(new Date(msg.sentAt)));
 			res.addProperty("eventId", "chat.postMessage");
 			res.addProperty("success", true);
 

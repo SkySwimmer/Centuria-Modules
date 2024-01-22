@@ -1673,6 +1673,8 @@ public class ApplicationManager {
 
 					// Append
 					if (mode.equals("append")) {
+						if (!inv.containsItem(id))
+							inv.setItem(id, new JsonArray());
 						JsonArray old = inv.getItem(id).getAsJsonArray();
 						old.add(data);
 						data = old;

@@ -1155,6 +1155,8 @@ public class ApplicationManager {
 									PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 											: account.getSaveSpecificInventory();
 									if (mode.equals("append")) {
+										if (!inv.containsItem(id))
+											inv.setItem(id, new JsonArray());
 										JsonArray old = inv.getItem(id2).getAsJsonArray();
 										old.add(data);
 										data = old;
@@ -1198,6 +1200,8 @@ public class ApplicationManager {
 									PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 											: account.getSaveSpecificInventory();
 									if (mode.equals("append")) {
+										if (!inv.containsItem(id))
+											inv.setItem(id, new JsonArray());
 										JsonArray old = inv.getItem(id2).getAsJsonArray();
 										old.add(data);
 										data = old;
@@ -1241,6 +1245,8 @@ public class ApplicationManager {
 									PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 											: account.getSaveSpecificInventory();
 									if (mode.equals("append")) {
+										if (!inv.containsItem(id))
+											inv.setItem(id, new JsonArray());
 										JsonArray old = inv.getItem(id2).getAsJsonArray();
 										old.add(data);
 										data = old;
@@ -1321,6 +1327,8 @@ public class ApplicationManager {
 
 						// Append
 						if (mode.equals("append")) {
+							if (!inv.containsItem(id))
+								inv.setItem(id, new JsonArray());
 							JsonArray old = inv.getItem(id2).getAsJsonArray();
 							old.add(data);
 							data = old;
@@ -1566,6 +1574,8 @@ public class ApplicationManager {
 								PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 										: account.getSaveSpecificInventory();
 								if (mode.equals("append")) {
+									if (!inv.containsItem(id))
+										inv.setItem(id, new JsonArray());
 									JsonArray old = inv.getItem(id).getAsJsonArray();
 									old.add(data);
 									data = old;
@@ -1607,6 +1617,8 @@ public class ApplicationManager {
 								PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 										: account.getSaveSpecificInventory();
 								if (mode.equals("append")) {
+									if (!inv.containsItem(id))
+										inv.setItem(id, new JsonArray());
 									JsonArray old = inv.getItem(id).getAsJsonArray();
 									old.add(data);
 									data = old;
@@ -1648,6 +1660,8 @@ public class ApplicationManager {
 								PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 										: account.getSaveSpecificInventory();
 								if (mode.equals("append")) {
+									if (!inv.containsItem(id))
+										inv.setItem(id, new JsonArray());
 									JsonArray old = inv.getItem(id).getAsJsonArray();
 									old.add(data);
 									data = old;

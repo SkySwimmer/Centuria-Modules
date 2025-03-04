@@ -992,13 +992,6 @@ public class ApplicationManager {
 				// Move to the next
 				ApplicationCommandDefinition cmd = def.application.get(index);
 				try {
-					memory.addProperty("index", index + 1);
-					try {
-						Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
-								memory.toString());
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
 					switch (cmd.command) {
 
 					// Forms
@@ -1037,8 +1030,15 @@ public class ApplicationManager {
 									Button.primary("application/cancel", btnCancelApp)));
 
 						// Send message
-						event.getMessage().get().edit().withComponents().subscribe();
-						return event.reply(msg.build());
+						event.reply(msg.build()).block();
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+						return event.getMessage().get().edit().withComponents();
 					}
 
 					// Suspend
@@ -1068,6 +1068,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1090,6 +1097,13 @@ public class ApplicationManager {
 						event.getInteraction().getChannel().block().createMessage(msg.build()).block();
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1105,6 +1119,13 @@ public class ApplicationManager {
 						account.getSaveSharedInventory().setItem("penalty", muteInfo);
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1114,6 +1135,13 @@ public class ApplicationManager {
 							account.migrateSaveDataToManagedMode();
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1123,6 +1151,13 @@ public class ApplicationManager {
 						account.getSaveSharedInventory().deleteItem("penalty");
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1167,6 +1202,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1212,6 +1254,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1257,6 +1306,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1269,6 +1325,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1282,6 +1345,13 @@ public class ApplicationManager {
 							mem.addRole(Snowflake.of(role)).block();
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1295,6 +1365,13 @@ public class ApplicationManager {
 							mem.removeRole(Snowflake.of(role)).block();
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1310,6 +1387,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1338,6 +1422,13 @@ public class ApplicationManager {
 						inv.setItem(id2, data);
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1379,21 +1470,19 @@ public class ApplicationManager {
 									Button.primary("application/cancel", btnCancelApp)));
 
 						// Send message
-						event.getMessage().get().edit().withComponents().subscribe();
-						return event.reply(msg.build());
-					}
-
-					// Error
-					default: {
-						// Go back
-						memory.addProperty("index", index - 1);
+						event.reply(msg.build()).block();
+						memory.addProperty("index", index + 1);
 						try {
 							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
 									memory.toString());
 						} catch (IOException e) {
 							throw new RuntimeException(e);
 						}
+						return event.getMessage().get().edit().withComponents();
+					}
 
+					// Error
+					default: {
 						// Error
 						return event.reply(InteractionApplicationCommandCallbackSpec.builder()
 								.addEmbed(EmbedCreateSpec.builder().title("Error occured!").color(Color.RED)

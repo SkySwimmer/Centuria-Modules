@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import org.asf.centuria.networking.chatserver.ChatClient;
 import org.asf.centuria.networking.chatserver.networking.AbstractChatPacket;
+import org.asf.centuria.networking.chatserver.rooms.ChatRoomTypes;
 import org.asf.centuria.packets.xt.gameserver.inventory.InventoryItemDownloadPacket;
 import org.asf.emuferal.peertopeer.PeerToPeerModule;
 import org.asf.emuferal.peertopeer.packets.impl.ChatPacket;
@@ -87,7 +88,7 @@ public class SendMessage extends org.asf.centuria.networking.chatserver.networki
 
 	@Override
 	public boolean handle(ChatClient client) {
-		if (!client.isRoomPrivate(room)) {
+		if (!client.getRoom(room).getType().equals(ChatRoomTypes.PRIVATE_CHAT)) {
 			String source = client.getPlayer().getAccountID();
 
 			// Check filter

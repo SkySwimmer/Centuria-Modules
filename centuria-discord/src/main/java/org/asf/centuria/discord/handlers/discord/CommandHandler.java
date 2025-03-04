@@ -13,6 +13,7 @@ import java.util.Random;
 import org.asf.centuria.Centuria;
 import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
+import org.asf.centuria.accounts.SaveMode;
 import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
 import org.asf.centuria.discord.applications.ApplicationManager;
@@ -806,6 +807,13 @@ public class CommandHandler {
 					}
 				}
 
+				// Get permissions
+				String permLevel2 = "member";
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel2 = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+
 				// Make moderator
 				if (!acc.getSaveSharedInventory().containsItem("permissions"))
 					acc.getSaveSharedInventory().setItem("permissions", new JsonObject());
@@ -825,6 +833,13 @@ public class CommandHandler {
 						break;
 					}
 				}
+
+				// Log
+				EventBus.getInstance()
+						.dispatchEvent(new MiscModerationEvent("permissions.update",
+								"Made " + acc.getDisplayName() + " moderator!",
+								Map.of("Former permission level", permLevel2, "New permission level", "moderator"),
+								modacc.getAccountID(), acc));
 
 				return event.reply("Made " + acc.getDisplayName() + " moderator.");
 			}
@@ -872,7 +887,14 @@ public class CommandHandler {
 					}
 				}
 
-				// Make moderator
+				// Get permissions
+				String permLevel2 = "member";
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel2 = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+
+				// Make admin
 				if (!acc.getSaveSharedInventory().containsItem("permissions"))
 					acc.getSaveSharedInventory().setItem("permissions", new JsonObject());
 				if (!acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject().has("permissionLevel"))
@@ -891,6 +913,13 @@ public class CommandHandler {
 						break;
 					}
 				}
+
+				// Log
+				EventBus.getInstance()
+						.dispatchEvent(new MiscModerationEvent("permissions.update",
+								"Made " + acc.getDisplayName() + " administrator!",
+								Map.of("Former permission level", permLevel2, "New permission level", "admin"),
+								modacc.getAccountID(), acc));
 
 				return event.reply("Made " + acc.getDisplayName() + " admin.");
 			}
@@ -979,6 +1008,13 @@ public class CommandHandler {
 					}
 				}
 
+				// Get permissions
+				String permLevel2 = "member";
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel2 = acc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+
 				// Remove permissions
 				acc.getSaveSharedInventory().deleteItem("permissions");
 
@@ -1000,6 +1036,13 @@ public class CommandHandler {
 						break;
 					}
 				}
+
+				// Log
+				EventBus.getInstance()
+						.dispatchEvent(new MiscModerationEvent("permissions.update",
+								"Removed all permissions from " + acc.getDisplayName() + "!",
+								Map.of("Former permission level", permLevel2, "New permission level", "member"),
+								modacc.getAccountID(), acc));
 
 				return event.reply("Removed permissions from " + acc.getDisplayName());
 			}
@@ -1143,7 +1186,7 @@ public class CommandHandler {
 					days = Integer.parseInt(
 							params.stream().filter(t -> t.name().equals("days")).findFirst().get().value().get());
 				event.deferReply().block();
-				acc.mute(minutes, hours, days, modacc.getAccountID(), null);
+				acc.mute(days, hours, minutes, modacc.getAccountID(), null);
 				event.editReply("Muted player " + acc.getDisplayName()).block();
 				break;
 			}
@@ -1243,6 +1286,10 @@ public class CommandHandler {
 					msg += "**Status:** " + (account.isBanned() ? "banned"
 							: (account.isMuted() ? "muted"
 									: (account.getOnlinePlayerInstance() != null ? "online" : "offline")));
+					if (account.getSaveMode() == SaveMode.MANAGED) {
+						msg += "\n";
+						msg += "**Active save:** " + account.getSaveManager().getCurrentActiveSave();
+					}
 					event.reply(msg).subscribe();
 				} else {
 					// Return error

@@ -1,3 +1,15 @@
+// buildscript {
+// 	repositories {
+// 		mavenCentral()
+// 		maven {
+// 			name = "AerialWorks"; url = "https://aerialworks.ddns.net/maven"
+// 		}
+// 	}
+// 	dependencies {
+// 		classpath 'org.asf.cyan.cornflower:Cornflower:1.0.0.A30'
+// 	}
+// }
+
 plugins {
 	id 'java'
 	id 'maven-publish'

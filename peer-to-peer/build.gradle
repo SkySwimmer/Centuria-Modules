@@ -26,7 +26,7 @@ ext.authorname = "AerialWorks Software Foundation"
 
 // Internal
 apply plugin: 'eclipse'
-apply plugin: 'org.asf.cyan.cornflower'
+// apply plugin: 'org.asf.cyan.cornflower'
 
 Calendar cal = new GregorianCalendar();
 cal.setTime(new Date());

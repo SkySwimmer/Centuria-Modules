@@ -228,7 +228,7 @@ public class ApplicationManager {
 
 	/**
 	 * Checks if a user is already applying to a application
-	 * 
+	 *
 	 * @param user User to check
 	 * @return True if the user is applying, false otherwise
 	 */
@@ -238,7 +238,7 @@ public class ApplicationManager {
 
 	/**
 	 * Checks if a user has applied to a specific application
-	 * 
+	 *
 	 * @param application Application ID
 	 * @param user        User to check
 	 * @return True if the user has applied, false otherwise
@@ -251,7 +251,7 @@ public class ApplicationManager {
 
 	/**
 	 * Starts a application
-	 * 
+	 *
 	 * @param application Application ID
 	 * @param user        User starting the application
 	 * @return True if successful, false otherwise
@@ -320,7 +320,7 @@ public class ApplicationManager {
 
 	/**
 	 * Handles application form submission event
-	 * 
+	 *
 	 * @param id      Modal ID (without the application prefix)
 	 * @param event   Modal submission event
 	 * @param gateway Discord client
@@ -390,7 +390,7 @@ public class ApplicationManager {
 
 	/**
 	 * Cancels applications for a user
-	 * 
+	 *
 	 * @param user   User to cancel the application for
 	 * @param force  Cancel even if the application hasn't been finished
 	 * @param reason Cancel reason
@@ -465,7 +465,7 @@ public class ApplicationManager {
 
 	/**
 	 * Handles interaction buttons for applications
-	 * 
+	 *
 	 * @param id      Button ID (without the application prefix)
 	 * @param event   Button event
 	 * @param gateway Gateway client
@@ -992,13 +992,6 @@ public class ApplicationManager {
 				// Move to the next
 				ApplicationCommandDefinition cmd = def.application.get(index);
 				try {
-					memory.addProperty("index", index + 1);
-					try {
-						Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
-								memory.toString());
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
 					switch (cmd.command) {
 
 					// Forms
@@ -1037,8 +1030,15 @@ public class ApplicationManager {
 									Button.primary("application/cancel", btnCancelApp)));
 
 						// Send message
-						event.getMessage().get().edit().withComponents().subscribe();
-						return event.reply(msg.build());
+						event.reply(msg.build()).block();
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+						return event.getMessage().get().edit().withComponents();
 					}
 
 					// Suspend
@@ -1068,6 +1068,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1090,6 +1097,13 @@ public class ApplicationManager {
 						event.getInteraction().getChannel().block().createMessage(msg.build()).block();
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1105,6 +1119,13 @@ public class ApplicationManager {
 						account.getSaveSharedInventory().setItem("penalty", muteInfo);
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1114,6 +1135,13 @@ public class ApplicationManager {
 							account.migrateSaveDataToManagedMode();
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1123,6 +1151,13 @@ public class ApplicationManager {
 						account.getSaveSharedInventory().deleteItem("penalty");
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1155,6 +1190,8 @@ public class ApplicationManager {
 									PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 											: account.getSaveSpecificInventory();
 									if (mode.equals("append")) {
+										if (!inv.containsItem(id))
+											inv.setItem(id, new JsonArray());
 										JsonArray old = inv.getItem(id2).getAsJsonArray();
 										old.add(data);
 										data = old;
@@ -1165,6 +1202,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1198,6 +1242,8 @@ public class ApplicationManager {
 									PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 											: account.getSaveSpecificInventory();
 									if (mode.equals("append")) {
+										if (!inv.containsItem(id))
+											inv.setItem(id, new JsonArray());
 										JsonArray old = inv.getItem(id2).getAsJsonArray();
 										old.add(data);
 										data = old;
@@ -1208,6 +1254,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1241,6 +1294,8 @@ public class ApplicationManager {
 									PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 											: account.getSaveSpecificInventory();
 									if (mode.equals("append")) {
+										if (!inv.containsItem(id))
+											inv.setItem(id, new JsonArray());
 										JsonArray old = inv.getItem(id2).getAsJsonArray();
 										old.add(data);
 										data = old;
@@ -1251,6 +1306,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1263,6 +1325,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1276,6 +1345,13 @@ public class ApplicationManager {
 							mem.addRole(Snowflake.of(role)).block();
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1289,6 +1365,13 @@ public class ApplicationManager {
 							mem.removeRole(Snowflake.of(role)).block();
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1304,6 +1387,13 @@ public class ApplicationManager {
 						}
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1321,6 +1411,8 @@ public class ApplicationManager {
 
 						// Append
 						if (mode.equals("append")) {
+							if (!inv.containsItem(id))
+								inv.setItem(id, new JsonArray());
 							JsonArray old = inv.getItem(id2).getAsJsonArray();
 							old.add(data);
 							data = old;
@@ -1330,6 +1422,13 @@ public class ApplicationManager {
 						inv.setItem(id2, data);
 
 						// Move to next
+						memory.addProperty("index", index + 1);
+						try {
+							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
+									memory.toString());
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 						return handleButton("movenext", event, gateway);
 					}
 
@@ -1371,21 +1470,19 @@ public class ApplicationManager {
 									Button.primary("application/cancel", btnCancelApp)));
 
 						// Send message
-						event.getMessage().get().edit().withComponents().subscribe();
-						return event.reply(msg.build());
-					}
-
-					// Error
-					default: {
-						// Go back
-						memory.addProperty("index", index - 1);
+						event.reply(msg.build()).block();
+						memory.addProperty("index", index + 1);
 						try {
 							Files.writeString(Path.of("applications/active/" + user.getId().asString() + ".json"),
 									memory.toString());
 						} catch (IOException e) {
 							throw new RuntimeException(e);
 						}
+						return event.getMessage().get().edit().withComponents();
+					}
 
+					// Error
+					default: {
 						// Error
 						return event.reply(InteractionApplicationCommandCallbackSpec.builder()
 								.addEmbed(EmbedCreateSpec.builder().title("Error occured!").color(Color.RED)
@@ -1566,6 +1663,8 @@ public class ApplicationManager {
 								PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 										: account.getSaveSpecificInventory();
 								if (mode.equals("append")) {
+									if (!inv.containsItem(id))
+										inv.setItem(id, new JsonArray());
 									JsonArray old = inv.getItem(id).getAsJsonArray();
 									old.add(data);
 									data = old;
@@ -1607,6 +1706,8 @@ public class ApplicationManager {
 								PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 										: account.getSaveSpecificInventory();
 								if (mode.equals("append")) {
+									if (!inv.containsItem(id))
+										inv.setItem(id, new JsonArray());
 									JsonArray old = inv.getItem(id).getAsJsonArray();
 									old.add(data);
 									data = old;
@@ -1648,6 +1749,8 @@ public class ApplicationManager {
 								PlayerInventory inv = type.equals("shared") ? account.getSaveSharedInventory()
 										: account.getSaveSpecificInventory();
 								if (mode.equals("append")) {
+									if (!inv.containsItem(id))
+										inv.setItem(id, new JsonArray());
 									JsonArray old = inv.getItem(id).getAsJsonArray();
 									old.add(data);
 									data = old;
@@ -1673,6 +1776,8 @@ public class ApplicationManager {
 
 					// Append
 					if (mode.equals("append")) {
+						if (!inv.containsItem(id))
+							inv.setItem(id, new JsonArray());
 						JsonArray old = inv.getItem(id).getAsJsonArray();
 						old.add(data);
 						data = old;
@@ -1794,7 +1899,7 @@ public class ApplicationManager {
 
 	/**
 	 * Adds and refreshes a application panel
-	 * 
+	 *
 	 * @param messageID   Panel ID
 	 * @param guild       Guild ID
 	 * @param channel     Channel ID

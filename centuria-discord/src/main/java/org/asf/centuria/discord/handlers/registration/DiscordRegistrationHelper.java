@@ -190,7 +190,9 @@ public class DiscordRegistrationHelper extends RegistrationVerificationHelper {
 		// Find member
 		for (Guild g : DiscordBotModule.getClient().getGuilds().toIterable()) {
 			for (Member u : g.getMembers().toIterable()) {
-				if (u.getTag().equals(payload.get("discordUser").getAsString())) {
+				if (u.getTag().equals(payload.get("discordUser").getAsString())
+						|| (u.getUsername().equals(payload.get("discordUser").getAsString())
+								&& Integer.parseInt(u.getDiscriminator()) == 0)) {
 					// Found it
 
 					// Check code

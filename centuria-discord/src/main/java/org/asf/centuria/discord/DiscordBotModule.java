@@ -248,30 +248,6 @@ public class DiscordBotModule implements ICenturiaModule {
 							return Mono.empty();
 						}));
 
-						// Command handler
-						ev = ev.then().and(gateway.on(MessageCreateEvent.class, event -> {
-							Guild g = event.getGuild().block();
-							if (g != null) {
-								// Only accept commands from servers
-								String msg = event.getMessage().getContent();
-
-								// Only handle commands
-								if (msg.startsWith("emuferal!")) {
-									// Inform commands have moved
-									return event.getMessage().getChannel().block().createMessage("**IMPORTANT**\n"
-											+ "As of 08/17/2022, text commands have been removed.\n\nPlease use the new slash commands instead."
-											+ "\nFurhtermore, command permissions __no longer use Discord permissions only, it checks for ingame permissions too.__");
-								}
-								if (msg.startsWith("centuria!")) {
-									// Inform commands have moved
-									return event.getMessage().getChannel().block().createMessage("**IMPORTANT**\n"
-											+ "As of 08/17/2022, text commands have been removed.\n\nPlease use the new slash commands instead."
-											+ "\nFurhtermore, command permissions __no longer use Discord permissions only, it checks for ingame permissions too.__");
-								}
-							}
-							return Mono.empty();
-						}));
-
 						// Startup
 						return gateway.on(ReadyEvent.class, t -> {
 							return Mono.fromRunnable(() -> {

@@ -181,7 +181,8 @@ public class PeerToPeerWindow {
 
 		try {
 			// Establish new connection
-			connector = new NexusClientBuilder().autoReconnect().withChannel("emuferal/v_b_1_5_3+/" + room).build();
+			connector = new NexusClientBuilder().autoReconnect()
+					.withChannel("emuferal/" + PeerToPeerModule.PROTOCOL_VERSION + "/" + room).build();
 			PeerToPeerModule.connector = connector;
 			connector.addDisconnectionEventHandler(id -> {
 				if (id.equals(connector.getConnectionID()) && !connector.isDisconnecting()) {

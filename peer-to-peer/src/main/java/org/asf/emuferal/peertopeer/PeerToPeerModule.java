@@ -51,6 +51,8 @@ public class PeerToPeerModule implements ICenturiaModule {
 	public static ArrayList<Runnable> listUpdateEvents = new ArrayList<Runnable>();
 	public static NexusClient connector;
 
+	public static final String PROTOCOL_VERSION = "v_b173+_1";
+
 	@Override
 	public String id() {
 		return "peer-to-peer";

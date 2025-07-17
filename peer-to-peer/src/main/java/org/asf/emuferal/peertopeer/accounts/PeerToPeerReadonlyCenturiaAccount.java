@@ -7,6 +7,7 @@ import org.asf.centuria.accounts.PlayerInventory;
 import org.asf.centuria.accounts.SaveManager;
 import org.asf.centuria.accounts.SaveMode;
 import org.asf.centuria.accounts.impl.LevelManager;
+import org.asf.centuria.accounts.tags.AccountTag;
 import org.asf.centuria.entities.players.Player;
 import org.asf.emuferal.peertopeer.players.P2PPlayer;
 
@@ -154,6 +155,26 @@ public class PeerToPeerReadonlyCenturiaAccount extends CenturiaAccount {
 	@Override
 	public boolean updateLoginName(String arg0) {
 		return false;
+	}
+
+	@Override
+	public AccountTag getAccountTag(String arg0) {
+		return null;
+	}
+
+	@Override
+	public AccountTag[] getAccountTags() {
+		return new AccountTag[0];
+	}
+
+	@Override
+	public boolean hasAccountTag(String arg0) {
+		return false;
+	}
+
+	@Override
+	public AccountTag setAccountTag(String arg0, JsonObject arg1) throws IllegalArgumentException {
+		throw new IllegalArgumentException("Peer-to-peer mode");
 	}
 
 }

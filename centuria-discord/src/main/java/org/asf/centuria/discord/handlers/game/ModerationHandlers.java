@@ -6,12 +6,15 @@ import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
 import org.asf.centuria.discord.ServerConfigUtils;
 import org.asf.centuria.discord.applications.ApplicationManager;
+import org.asf.centuria.discord.events.AccountPairedEvent;
 import org.asf.centuria.modules.eventbus.EventListener;
 import org.asf.centuria.modules.eventbus.IEventReceiver;
 import org.asf.centuria.modules.events.accounts.AccountBanEvent;
 import org.asf.centuria.modules.events.accounts.AccountDeletionEvent;
+import org.asf.centuria.modules.events.accounts.AccountDisplayNameChangedEvent;
 import org.asf.centuria.modules.events.accounts.AccountMuteEvent;
 import org.asf.centuria.modules.events.accounts.AccountPardonEvent;
+import org.asf.centuria.modules.events.accounts.AccountRegistrationEvent;
 import org.asf.centuria.modules.events.accounts.MiscModerationEvent;
 import org.asf.centuria.modules.events.accounts.AccountKickEvent;
 
@@ -41,7 +44,8 @@ public class ModerationHandlers implements IEventReceiver {
 		}
 		moderationLog(ev.getModerationEventTitle(), userID,
 				ev.getTarget() != null ? ev.getTarget().getDisplayName() : null,
-				ev.getTarget() != null ? ev.getTarget().getAccountID() : null, data, ev.getIssuer(), null);
+				ev.getTarget() != null ? ev.getTarget().getAccountID() : null, data, ev.getIssuer(), null,
+				ev.isUrgent());
 	}
 
 	@EventListener
@@ -61,7 +65,7 @@ public class ModerationHandlers implements IEventReceiver {
 		// Log moderation
 		moderationLog("Ban", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
 				ev.isPermanent() ? "Ban type: **Permanent**" : ("Ban type: **Temporary** (" + ev.getDays() + " days)"),
-				ev.getIssuer(), ev.getReason());
+				ev.getIssuer(), ev.getReason(), true);
 
 		if (userID != null) {
 			// DM them if not appealed before
@@ -127,11 +131,52 @@ public class ModerationHandlers implements IEventReceiver {
 
 		// Log moderation
 		moderationLog("Account Deleted", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(), null,
-				"SYSTEM", null);
+				"SYSTEM", null, false);
+	}
+
+	@EventListener
+	public void handleRegister(AccountRegistrationEvent ev) {
+		// Find discord client (if present)
+		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
+
+		// Log moderation
+		moderationLog("Account registered", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
+				null, "SYSTEM", null, false);
+	}
+
+	@EventListener
+	public void handleRename(AccountDisplayNameChangedEvent ev) {
+		// Find discord client (if present)
+		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
+
+		// Log moderation
+		moderationLog("Account display name changed", userID, ev.getOldName(), ev.getAccount().getAccountID(),
+				"Old display name: **" + ev.getOldName() + "**\nNew display name: **" + ev.getNewName() + "**",
+				"SYSTEM", null, false);
+	}
+
+	@EventListener
+	public void handlePair(AccountPairedEvent ev) {
+		// Find discord client (if present)
+		String userID = ev.getDiscordUserId();
+
+		// Log moderation
+		moderationLog("Account paired", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(), null,
+				"SYSTEM", null, false);
+	}
+
+	@EventListener
+	public void handleUnpair(AccountPairedEvent ev) {
+		// Find discord client (if present)
+		String userID = ev.getDiscordUserId();
+
+		// Log moderation
+		moderationLog("Account unpaired", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
+				null, "SYSTEM", null, false);
 	}
 
 	private void moderationLog(String type, String userID, String displayName, String accountID, String data,
-			String issuer, String reason) {
+			String issuer, String reason, boolean ping) {
 		// Log moderation action to the moderation log
 		String message = "**Centuria Moderation Log**\n";
 		message += "\n";
@@ -167,7 +212,7 @@ public class ModerationHandlers implements IEventReceiver {
 				// Find channel
 				String ch = config.get("moderationLogChannel").getAsString();
 				String srvMessage = message;
-				if (config.has("moderatorRole")) {
+				if (config.has("moderatorRole") && ping) {
 					// Add ping
 					srvMessage += "\n\n<@&" + config.get("moderatorRole").getAsString() + ">";
 				}
@@ -197,7 +242,7 @@ public class ModerationHandlers implements IEventReceiver {
 
 		// Log moderation
 		moderationLog("Mute", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
-				"Unmute timestamp: <t:" + (ev.getUnmuteTimestamp() / 1000) + ">", ev.getIssuer(), ev.getReason());
+				"Unmute timestamp: <t:" + (ev.getUnmuteTimestamp() / 1000) + ">", ev.getIssuer(), ev.getReason(), true);
 
 		if (userID != null) {
 			// DM them
@@ -236,7 +281,7 @@ public class ModerationHandlers implements IEventReceiver {
 
 		// Log moderation
 		moderationLog("Kick", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(), null,
-				ev.getIssuer(), ev.getReason());
+				ev.getIssuer(), ev.getReason(), true);
 	}
 
 	@EventListener
@@ -246,7 +291,7 @@ public class ModerationHandlers implements IEventReceiver {
 
 		// Log moderation
 		moderationLog("Pardon", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(), null,
-				ev.getIssuer(), ev.getReason());
+				ev.getIssuer(), ev.getReason(), true);
 
 		// Remove appeal lock
 		if (ev.getAccount().getSaveSharedInventory().containsItem("appeallock"))

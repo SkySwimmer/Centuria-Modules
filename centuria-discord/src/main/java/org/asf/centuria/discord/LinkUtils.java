@@ -10,6 +10,9 @@ import java.util.HashMap;
 import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.discord.applications.ApplicationManager;
+import org.asf.centuria.discord.events.AccountPairedEvent;
+import org.asf.centuria.discord.events.AccountUnpairedEvent;
+import org.asf.centuria.modules.eventbus.EventBus;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -232,6 +235,9 @@ public class LinkUtils {
 		accountLinks.addProperty(userID, account.getAccountID());
 		saveRegistry();
 
+		// Dispatch
+		EventBus.getInstance().dispatchEvent(new AccountPairedEvent(account, userID));
+
 		// Add penalty if present
 		JsonObject penalty = DiscordBotModule.getPenaltyFromMemory(userID);
 		if (penalty != null)
@@ -315,6 +321,9 @@ public class LinkUtils {
 		if (accountLinks.has(userID))
 			accountLinks.remove(userID);
 		saveRegistry();
+
+		// Dispatch
+		EventBus.getInstance().dispatchEvent(new AccountUnpairedEvent(account, userID));
 
 		if (sendDM && user != null) {
 			// DM the user

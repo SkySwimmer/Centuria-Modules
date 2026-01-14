@@ -135,6 +135,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 		// Register commands
 		event.addCommandSyntaxMessage("gccreate/gcc \"<name>\"");
 		event.addCommandSyntaxMessage("gcrename/gcr \"<new name>\"");
+		event.addCommandSyntaxMessage("gctransfer/gct \"<new owner>\"");
 		event.addCommandSyntaxMessage("gcadd/gca \"<player>\"");
 		event.addCommandSyntaxMessage("gckick/gck \"<player>\"");
 		event.addCommandSyntaxMessage("gclistmembers/gclm");
@@ -147,90 +148,92 @@ public class GcsForFeralModule implements ICenturiaModule {
 		// Called to handle commands
 		switch (event.getCommandID()) {
 
-		// Create gc
-		case "gcc":
-		case "gccreate": {
-			// Check arguments
-			if (event.getCommandArguments().length < 1) {
-				event.respond("Missing argument: GC name");
-				return;
-			}
-
-			// Find GC
-			String nm = event.getCommandArguments()[0].trim();
-			if (gcNameExists(nm, event.getClient())) {
-				event.respond("Error: GC with that name already exists");
-				return;
-			}
-			if (nm.length() < 3) {
-				event.respond("Error: name too short");
-				return;
-			}
-			if (nm.length() > 15) {
-				event.respond("Error: name too long");
-				return;
-			}
-
-			// Create GC
-			String id = UUID.randomUUID().toString();
-			while (DMManager.getInstance().dmExists(id))
-				id = UUID.randomUUID().toString();
-			DMManager.getInstance().openDM(id, new String[] { "plaintext:[GC] " + nm });
-
-			// Join GC
-			joinGC(id, event.getAccount());
-			systemMessage(id, event.getAccount().getDisplayName() + " created the GC.");
-
-			// Respond
-			event.respond("Success! GC " + nm + " has been created!");
-
-			break;
-		}
-
-		// GC list
-		case "gclist": {
-			String msg = "Group chats you are part of:";
-			ArrayList<JsonElement> toRemove = new ArrayList<JsonElement>();
-			JsonArray arr = event.getAccount().getSaveSharedInventory().getItem("gcs").getAsJsonArray();
-			for (JsonElement ele : arr) {
-				String id = ele.getAsString();
-
-				// Check existence
-				if (DMManager.getInstance().dmExists(id)) {
-					// List it
-					String[] participants = DMManager.getInstance().getDMParticipants(id);
-					msg += "\n - " + participants[0].substring("plaintext:[GC] ".length()) + " - "
-							+ (participants.length - 1) + " participant(s)";
-				} else {
-					// Remove it
-					toRemove.add(ele);
+			// Create gc
+			case "gcc":
+			case "gccreate": {
+				// Check arguments
+				if (event.getCommandArguments().length < 1) {
+					event.respond("Missing argument: GC name");
+					return;
 				}
+
+				// Find GC
+				String nm = event.getCommandArguments()[0].trim();
+				if (gcNameExists(nm, event.getClient())) {
+					event.respond("Error: GC with that name already exists");
+					return;
+				}
+				if (nm.length() < 3) {
+					event.respond("Error: name too short");
+					return;
+				}
+				if (nm.length() > 15) {
+					event.respond("Error: name too long");
+					return;
+				}
+
+				// Create GC
+				String id = UUID.randomUUID().toString();
+				while (DMManager.getInstance().dmExists(id))
+					id = UUID.randomUUID().toString();
+				DMManager.getInstance().openDM(id, new String[] { "plaintext:[GC] " + nm });
+
+				// Join GC
+				joinGC(id, event.getAccount());
+				systemMessage(id, event.getAccount().getDisplayName() + " created the GC.");
+
+				// Respond
+				event.respond("Success! GC " + nm + " has been created!");
+
+				break;
 			}
 
-			// Remove nonexistent
-			for (JsonElement ele : toRemove)
-				arr.remove(ele);
+			// GC list
+			case "gclist": {
+				String msg = "Group chats you are part of:";
+				ArrayList<JsonElement> toRemove = new ArrayList<JsonElement>();
+				JsonArray arr = event.getAccount().getSaveSharedInventory().getItem("gcs").getAsJsonArray();
+				for (JsonElement ele : arr) {
+					String id = ele.getAsString();
 
-			// Save if needed
-			if (toRemove.size() != 0)
-				event.getAccount().getSaveSharedInventory().setItem("gcs", arr);
-			event.respond(msg);
-			break;
-		}
+					// Check existence
+					if (DMManager.getInstance().dmExists(id)) {
+						// List it
+						String[] participants = DMManager.getInstance().getDMParticipants(id);
+						msg += "\n - " + participants[0].substring("plaintext:[GC] ".length()) + " - "
+								+ (participants.length - 1) + " participant(s)";
+					} else {
+						// Remove it
+						toRemove.add(ele);
+					}
+				}
 
-		// Invalid commands
-		case "gckick":
-		case "gck":
-		case "gcleave":
-		case "gcl":
-		case "gclistmembers":
-		case "gclm":
-		case "gcadd":
-		case "gca":
-		case "gcrename":
-		case "gcr":
-			event.respond("Error: this command needs to be run from within a Group Chat.");
-			break;
+				// Remove nonexistent
+				for (JsonElement ele : toRemove)
+					arr.remove(ele);
+
+				// Save if needed
+				if (toRemove.size() != 0)
+					event.getAccount().getSaveSharedInventory().setItem("gcs", arr);
+				event.respond(msg);
+				break;
+			}
+
+			// Invalid commands
+			case "gct":
+			case "gctransfer":
+			case "gckick":
+			case "gck":
+			case "gcleave":
+			case "gcl":
+			case "gclistmembers":
+			case "gclm":
+			case "gcadd":
+			case "gca":
+			case "gcrename":
+			case "gcr":
+				event.respond("Error: this command needs to be run from within a Group Chat.");
+				break;
 
 		}
 	}
@@ -301,363 +304,494 @@ public class GcsForFeralModule implements ICenturiaModule {
 					// Handle command
 					switch (cmd) {
 
-					case "gcrename":
-					case "gcr": {
-						// Kick player
-						event.cancel();
+						case "gcrename":
+						case "gcr": {
+							// Kick player
+							event.cancel();
 
-						// Check if owner
-						String owner = DMManager.getInstance().getDMParticipants(event.getConversationId())[1];
-						CenturiaAccount ownerAcc = AccountManager.getInstance().getAccount(owner);
-						if (!event.getAccount().getAccountID().equals(owner) && ownerAcc != null) {
-							// Error
+							// Check if owner
+							String owner = DMManager.getInstance().getDMParticipants(event.getConversationId())[1];
+							CenturiaAccount ownerAcc = AccountManager.getInstance().getAccount(owner);
+							if (!event.getAccount().getAccountID().equals(owner) && ownerAcc != null) {
+								// Error
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd
+												+ ":\n[system] Error: you are not the GC owner, only "
+												+ ownerAcc.getDisplayName() + " can use this command.");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+
+							// Check arguments
+							String[] cmdArgs = args.toArray(t -> new String[t]);
+							if (cmdArgs.length < 1) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd + ":\n[system] Missing argument: new name");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+
+							// Get and check new name
+							String newName = cmdArgs[0];
+							if (newName.length() < 3) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd + ":\n[system] Error: name too short");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+							if (newName.length() > 15) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd + ":\n[system] Error: name too long");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+
+							// Rename
+							String[] participants = DMManager.getInstance()
+									.getDMParticipants(event.getConversationId());
+							participants[0] = "plaintext:[GC] " + newName;
+							DMManager.getInstance().updateDMParticipants(event.getConversationId(), participants);
+
+							// Send update
+							JsonObject res = new JsonObject();
+							res.add("conversation", event.getServer().roomObject(event.getConversationId(),
+									true, event.getClient().getPlayer().getAccountID()));
+							res.addProperty("eventId", "conversations.get");
+							res.addProperty("success", true);
+							event.getClient().sendPacket(res);
+
+							// Send response
 							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
 							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
+							res = new JsonObject();
 							res.addProperty("conversationType", "private");
 							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message",
-									"Issued chat command: " + cmd + ":\n[system] Error: you are not the GC owner, only "
-											+ ownerAcc.getDisplayName() + " can use this command.");
+							res.addProperty("message", "Issued chat command: " + cmd + ":\n[system] Renamed the GC to "
+									+ newName + ", please note the change may not be visible right away.");
 							res.addProperty("source", event.getAccount().getAccountID());
 							res.addProperty("sentAt", fmt.format(new Date()));
 							res.addProperty("eventId", "chat.postMessage");
 							res.addProperty("success", true);
 							event.getClient().sendPacket(res);
-							return;
+							break;
 						}
 
-						// Check arguments
-						String[] cmdArgs = args.toArray(t -> new String[t]);
-						if (cmdArgs.length < 1) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message",
-									"Issued chat command: " + cmd + ":\n[system] Missing argument: new name");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
+						case "gctransfer":
+						case "gct": {
+							// Transfer ownership
+							event.cancel();
 
-						// Get and check new name
-						String newName = cmdArgs[0];
-						if (newName.length() < 3) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message",
-									"Issued chat command: " + cmd + ":\n[system] Error: name too short");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-						if (newName.length() > 15) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message",
-									"Issued chat command: " + cmd + ":\n[system] Error: name too long");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
+							// Check if owner
+							String owner = DMManager.getInstance().getDMParticipants(event.getConversationId())[1];
+							CenturiaAccount ownerAcc = AccountManager.getInstance().getAccount(owner);
+							if (!event.getAccount().getAccountID().equals(owner) && ownerAcc != null) {
+								// Error
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd
+												+ ":\n[system] Error: you are not the GC owner, only "
+												+ ownerAcc.getDisplayName() + " can use this command.");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
 
-						// Rename
-						String[] participants = DMManager.getInstance().getDMParticipants(event.getConversationId());
-						participants[0] = "plaintext:[GC] " + newName;
-						DMManager.getInstance().updateDMParticipants(event.getConversationId(), participants);
+							// Check arguments
+							String[] cmdArgs = args.toArray(t -> new String[t]);
+							if (cmdArgs.length < 1) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd + ":\n[system] Missing argument: new owner");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
 
-						// Send update
-						JsonObject res = new JsonObject();
-						res.add("conversation", event.getServer().roomObject(event.getConversationId(),
-								true, event.getClient().getPlayer().getAccountID()));
-						res.addProperty("eventId", "conversations.get");
-						res.addProperty("success", true);
-						event.getClient().sendPacket(res);
-
-						// Send response
-						SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-						fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-						res = new JsonObject();
-						res.addProperty("conversationType", "private");
-						res.addProperty("conversationId", event.getConversationId());
-						res.addProperty("message", "Issued chat command: " + cmd + ":\n[system] Renamed the GC to "
-								+ newName + ", please note the change may not be visible right away.");
-						res.addProperty("source", event.getAccount().getAccountID());
-						res.addProperty("sentAt", fmt.format(new Date()));
-						res.addProperty("eventId", "chat.postMessage");
-						res.addProperty("success", true);
-						event.getClient().sendPacket(res);
-						break;
-					}
-
-					case "gckick":
-					case "gck": {
-						// Kick player
-						event.cancel();
-
-						// Check if owner
-						String owner = DMManager.getInstance().getDMParticipants(event.getConversationId())[1];
-						CenturiaAccount ownerAcc = AccountManager.getInstance().getAccount(owner);
-						if (!event.getAccount().getAccountID().equals(owner) && ownerAcc != null) {
-							// Error
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message",
-									"Issued chat command: " + cmd + ":\n[system] Error: you are not the GC owner, only "
-											+ ownerAcc.getDisplayName() + " can use this command.");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-
-						// Check arguments
-						String[] cmdArgs = args.toArray(t -> new String[t]);
-						if (cmdArgs.length < 1) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message",
-									"Issued chat command: " + cmd + ":\n[system] Missing argument: player");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-
-						// Find player
-						String id = AccountManager.getInstance().getUserByDisplayName(cmdArgs[0]);
-						if (id == null) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message", "Issued chat command: " + cmd
-									+ ":\n[system] Invalid argument: player: player not found");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-						CenturiaAccount acc = AccountManager.getInstance().getAccount(id);
-						if (acc == null
-								|| !Stream.of(DMManager.getInstance().getDMParticipants(event.getConversationId()))
-										.anyMatch(t -> t.equals(id))) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message", "Issued chat command: " + cmd
-									+ ":\n[system] Invalid argument: player: player not found");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-
-						// Send response
-						SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-						fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-						JsonObject res = new JsonObject();
-						res.addProperty("conversationType", "private");
-						res.addProperty("conversationId", event.getConversationId());
-						res.addProperty("message",
-								"Issued chat command: " + cmd + ":\n[system] Kicked " + acc.getDisplayName());
-						res.addProperty("source", event.getAccount().getAccountID());
-						res.addProperty("sentAt", fmt.format(new Date()));
-						res.addProperty("eventId", "chat.postMessage");
-						res.addProperty("success", true);
-						event.getClient().sendPacket(res);
-
-						// Kick player
-						leaveGC(event.getConversationId(), acc);
-
-						break;
-					}
-
-					case "gcadd":
-					case "gca": {
-						// Add player
-						event.cancel();
-
-						// Check arguments
-						String[] cmdArgs = args.toArray(t -> new String[t]);
-						if (cmdArgs.length < 1) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message",
-									"Issued chat command: " + cmd + ":\n[system] Missing argument: player");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-
-						// Find player
-						String id = AccountManager.getInstance().getUserByDisplayName(cmdArgs[0]);
-						if (id == null) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message", "Issued chat command: " + cmd
-									+ ":\n[system] Invalid argument: player: player not found");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-						CenturiaAccount acc = AccountManager.getInstance().getAccount(id);
-						if (acc == null) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message", "Issued chat command: " + cmd
-									+ ":\n[system] Invalid argument: player: player not found");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-						if (isGCConvo(event.getConversationId(), acc)) {
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message", "Issued chat command: " + cmd
-									+ ":\n[system] Invalid argument: player: player is already in this GC");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-
-						// Check mutuals
-						SocialManager manager = SocialManager.getInstance();
-						if (!manager.getPlayerIsFollowing(id, event.getAccount().getAccountID())
-								|| !manager.getPlayerIsFollowing(event.getAccount().getAccountID(), id)
-								|| manager.getPlayerIsBlocked(id, event.getAccount().getAccountID())) {
-							// Error
-							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-							JsonObject res = new JsonObject();
-							res.addProperty("conversationType", "private");
-							res.addProperty("conversationId", event.getConversationId());
-							res.addProperty("message",
-									"Issued chat command: " + cmd + ":\n[system] Cannot add " + acc.getDisplayName()
-											+ " to the GC: you need to be mutual followers to add players to a GC.");
-							res.addProperty("source", event.getAccount().getAccountID());
-							res.addProperty("sentAt", fmt.format(new Date()));
-							res.addProperty("eventId", "chat.postMessage");
-							res.addProperty("success", true);
-							event.getClient().sendPacket(res);
-							return;
-						}
-
-						// Send response
-						SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-						fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-						JsonObject res = new JsonObject();
-						res.addProperty("conversationType", "private");
-						res.addProperty("conversationId", event.getConversationId());
-						res.addProperty("message",
-								"Issued chat command: " + cmd + ":\n[system] Added " + acc.getDisplayName());
-						res.addProperty("source", event.getAccount().getAccountID());
-						res.addProperty("sentAt", fmt.format(new Date()));
-						res.addProperty("eventId", "chat.postMessage");
-						res.addProperty("success", true);
-						event.getClient().sendPacket(res);
-
-						// Add player
-						joinGC(event.getConversationId(), acc);
-						systemMessage(event.getConversationId(), event.getAccount().getDisplayName() + " added "
-								+ acc.getDisplayName() + " to the group chat.");
-
-						break;
-					}
-
-					case "gclistmembers":
-					case "gclm": {
-						// List members
-						event.cancel();
-
-						// Build message
-						String message = "List of GC members:";
-						String[] participants = DMManager.getInstance().getDMParticipants(event.getConversationId());
-						for (int i = 1; i < participants.length; i++) {
-							String id = participants[i];
+							// Find player
+							String id = AccountManager.getInstance().getUserByDisplayName(cmdArgs[0]);
+							if (id == null) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message", "Issued chat command: " + cmd
+										+ ":\n[system] Invalid argument: new owner: player not found");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
 							CenturiaAccount acc = AccountManager.getInstance().getAccount(id);
-							if (acc != null)
-								message += "\n - " + acc.getDisplayName();
-						}
-						SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
-						fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-						JsonObject res = new JsonObject();
-						res.addProperty("conversationType", "private");
-						res.addProperty("conversationId", event.getConversationId());
-						res.addProperty("message", "Issued chat command: " + cmd + ":\n[system] " + message);
-						res.addProperty("source", event.getAccount().getAccountID());
-						res.addProperty("sentAt", fmt.format(new Date()));
-						res.addProperty("eventId", "chat.postMessage");
-						res.addProperty("success", true);
-						event.getClient().sendPacket(res);
-						break;
-					}
+							if (acc == null
+									|| !Stream.of(DMManager.getInstance().getDMParticipants(event.getConversationId()))
+											.anyMatch(t -> t.equals(id))) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message", "Issued chat command: " + cmd
+										+ ":\n[system] Invalid argument: new owner: player not found");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
 
-					case "gcleave":
-					case "gcl": {
-						// Leave GC
-						leaveGC(event.getConversationId(), event.getAccount());
-						event.cancel();
-						break;
-					}
+							// Send response
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+							JsonObject res = new JsonObject();
+							res.addProperty("conversationType", "private");
+							res.addProperty("conversationId", event.getConversationId());
+							res.addProperty("message",
+									"Issued chat command: " + cmd + ":\n[system] Transferred ownership to "
+											+ acc.getDisplayName());
+							res.addProperty("source", event.getAccount().getAccountID());
+							res.addProperty("sentAt", fmt.format(new Date()));
+							res.addProperty("eventId", "chat.postMessage");
+							res.addProperty("success", true);
+							event.getClient().sendPacket(res);
+
+							// Change participant list
+							String[] participants = DMManager.getInstance()
+									.getDMParticipants(event.getConversationId());
+							ArrayList<String> newParticipants = new ArrayList<String>();
+							for (String participant : participants) {
+								// Skip Self
+								if (participant.equals(acc.getAccountID()))
+									continue;
+
+								// Replace owner
+								if (participant.equals(owner)) {
+									newParticipants.add(acc.getAccountID());
+									continue;
+								}
+
+								// Add participant
+								newParticipants.add(participant);
+							}
+							
+							// Add self
+							newParticipants.add(owner);
+
+							// Save
+							DMManager.getInstance().updateDMParticipants(event.getConversationId(), newParticipants.toArray(t -> new String[t]));
+
+							// Send system message
+							systemMessage(id, "Transferred ownership owner: " + acc.getDisplayName());
+
+							break;
+						}
+
+						case "gckick":
+						case "gck": {
+							// Kick player
+							event.cancel();
+
+							// Check if owner
+							String owner = DMManager.getInstance().getDMParticipants(event.getConversationId())[1];
+							CenturiaAccount ownerAcc = AccountManager.getInstance().getAccount(owner);
+							if (!event.getAccount().getAccountID().equals(owner) && ownerAcc != null) {
+								// Error
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd
+												+ ":\n[system] Error: you are not the GC owner, only "
+												+ ownerAcc.getDisplayName() + " can use this command.");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+
+							// Check arguments
+							String[] cmdArgs = args.toArray(t -> new String[t]);
+							if (cmdArgs.length < 1) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd + ":\n[system] Missing argument: player");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+
+							// Find player
+							String id = AccountManager.getInstance().getUserByDisplayName(cmdArgs[0]);
+							if (id == null) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message", "Issued chat command: " + cmd
+										+ ":\n[system] Invalid argument: player: player not found");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+							CenturiaAccount acc = AccountManager.getInstance().getAccount(id);
+							if (acc == null
+									|| !Stream.of(DMManager.getInstance().getDMParticipants(event.getConversationId()))
+											.anyMatch(t -> t.equals(id))) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message", "Issued chat command: " + cmd
+										+ ":\n[system] Invalid argument: player: player not found");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+
+							// Send response
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+							JsonObject res = new JsonObject();
+							res.addProperty("conversationType", "private");
+							res.addProperty("conversationId", event.getConversationId());
+							res.addProperty("message",
+									"Issued chat command: " + cmd + ":\n[system] Kicked " + acc.getDisplayName());
+							res.addProperty("source", event.getAccount().getAccountID());
+							res.addProperty("sentAt", fmt.format(new Date()));
+							res.addProperty("eventId", "chat.postMessage");
+							res.addProperty("success", true);
+							event.getClient().sendPacket(res);
+
+							// Kick player
+							leaveGC(event.getConversationId(), acc);
+
+							break;
+						}
+
+						case "gcadd":
+						case "gca": {
+							// Add player
+							event.cancel();
+
+							// Check arguments
+							String[] cmdArgs = args.toArray(t -> new String[t]);
+							if (cmdArgs.length < 1) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd + ":\n[system] Missing argument: player");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+
+							// Find player
+							String id = AccountManager.getInstance().getUserByDisplayName(cmdArgs[0]);
+							if (id == null) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message", "Issued chat command: " + cmd
+										+ ":\n[system] Invalid argument: player: player not found");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+							CenturiaAccount acc = AccountManager.getInstance().getAccount(id);
+							if (acc == null) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message", "Issued chat command: " + cmd
+										+ ":\n[system] Invalid argument: player: player not found");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+							if (isGCConvo(event.getConversationId(), acc)) {
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message", "Issued chat command: " + cmd
+										+ ":\n[system] Invalid argument: player: player is already in this GC");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+
+							// Check mutuals
+							SocialManager manager = SocialManager.getInstance();
+							if (!manager.getPlayerIsFollowing(id, event.getAccount().getAccountID())
+									|| !manager.getPlayerIsFollowing(event.getAccount().getAccountID(), id)
+									|| manager.getPlayerIsBlocked(id, event.getAccount().getAccountID())) {
+								// Error
+								SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+								fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+								JsonObject res = new JsonObject();
+								res.addProperty("conversationType", "private");
+								res.addProperty("conversationId", event.getConversationId());
+								res.addProperty("message",
+										"Issued chat command: " + cmd + ":\n[system] Cannot add " + acc.getDisplayName()
+												+ " to the GC: you need to be mutual followers to add players to a GC.");
+								res.addProperty("source", event.getAccount().getAccountID());
+								res.addProperty("sentAt", fmt.format(new Date()));
+								res.addProperty("eventId", "chat.postMessage");
+								res.addProperty("success", true);
+								event.getClient().sendPacket(res);
+								return;
+							}
+
+							// Send response
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+							JsonObject res = new JsonObject();
+							res.addProperty("conversationType", "private");
+							res.addProperty("conversationId", event.getConversationId());
+							res.addProperty("message",
+									"Issued chat command: " + cmd + ":\n[system] Added " + acc.getDisplayName());
+							res.addProperty("source", event.getAccount().getAccountID());
+							res.addProperty("sentAt", fmt.format(new Date()));
+							res.addProperty("eventId", "chat.postMessage");
+							res.addProperty("success", true);
+							event.getClient().sendPacket(res);
+
+							// Add player
+							joinGC(event.getConversationId(), acc);
+							systemMessage(event.getConversationId(), event.getAccount().getDisplayName() + " added "
+									+ acc.getDisplayName() + " to the group chat.");
+
+							break;
+						}
+
+						case "gclistmembers":
+						case "gclm": {
+							// List members
+							event.cancel();
+
+							// Build message
+							String message = "List of GC members:";
+							String[] participants = DMManager.getInstance()
+									.getDMParticipants(event.getConversationId());
+							for (int i = 1; i < participants.length; i++) {
+								String id = participants[i];
+								CenturiaAccount acc = AccountManager.getInstance().getAccount(id);
+								if (acc != null)
+									message += "\n - " + acc.getDisplayName();
+							}
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy'-'MM'-'dd'T'HH':'mm':'ssXXX");
+							fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+							JsonObject res = new JsonObject();
+							res.addProperty("conversationType", "private");
+							res.addProperty("conversationId", event.getConversationId());
+							res.addProperty("message", "Issued chat command: " + cmd + ":\n[system] " + message);
+							res.addProperty("source", event.getAccount().getAccountID());
+							res.addProperty("sentAt", fmt.format(new Date()));
+							res.addProperty("eventId", "chat.postMessage");
+							res.addProperty("success", true);
+							event.getClient().sendPacket(res);
+							break;
+						}
+
+						case "gcleave":
+						case "gcl": {
+							// Leave GC
+							leaveGC(event.getConversationId(), event.getAccount());
+							event.cancel();
+							break;
+						}
 
 					}
 				}

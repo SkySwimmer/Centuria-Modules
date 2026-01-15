@@ -242,7 +242,8 @@ public class ModerationHandlers implements IEventReceiver {
 
 		// Log moderation
 		moderationLog("Mute", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
-				"Unmute timestamp: <t:" + (ev.getUnmuteTimestamp() / 1000) + ">", ev.getIssuer(), ev.getReason(), true);
+				ev.getUnmuteTimestamp() == -1 ? null : "Unmute timestamp: <t:" + (ev.getUnmuteTimestamp() / 1000) + ">",
+				ev.getIssuer(), ev.getReason(), true);
 
 		if (userID != null) {
 			// DM them

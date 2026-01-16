@@ -257,6 +257,8 @@ public class ModerationHandlers implements IEventReceiver {
 							+ (ev.getUnmuteTimestamp() != -1 ? "\n" : "");
 				if (ev.getUnmuteTimestamp() != -1)
 					message += "You are not allowed to use the chat until <t:" + (ev.getUnmuteTimestamp() / 1000) + ">";
+				else
+					message += "You are not allowed to use the chat until the staff removes the mute";
 
 				// Embed
 				embed.title("Public chat mute in " + DiscordBotModule.getServerName());

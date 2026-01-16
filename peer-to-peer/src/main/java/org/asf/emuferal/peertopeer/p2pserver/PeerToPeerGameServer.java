@@ -126,6 +126,7 @@ public class PeerToPeerGameServer extends GameServer {
 
 				// Assign info
 				player.roomReady = true;
+				player.player.keepAliveLast = System.currentTimeMillis();
 				player.player.roomReady = true;
 				player.levelID = player.player.levelID;
 				player.levelType = player.player.levelType;

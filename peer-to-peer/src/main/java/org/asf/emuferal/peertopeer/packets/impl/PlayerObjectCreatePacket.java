@@ -77,6 +77,7 @@ public class PlayerObjectCreatePacket extends NexusPacket {
 		player.levelID = levelID;
 		player.levelType = levelType;
 		player.roomReady = true;
+		player.player.keepAliveLast = System.currentTimeMillis();
 		player.player.roomReady = true;
 
 		// Create object info

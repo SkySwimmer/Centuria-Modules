@@ -253,8 +253,11 @@ public class ModerationHandlers implements IEventReceiver {
 				// Description content
 				String message = "You have been muted for violating the server rules.\n";
 				if (ev.getReason() != null)
-					message = "You have been muted, reason: `" + ev.getReason() + "`\n";
-				message += "You are not allowed to use public chat until <t:" + (ev.getUnmuteTimestamp() / 1000) + ">";
+					message = "You have been muted, reason: `" + ev.getReason() + "`"
+							+ (ev.getUnmuteTimestamp() != -1 ? "\n" : "");
+				if (ev.getUnmuteTimestamp() != -1)
+					message += "You are not allowed to use public chat until <t:" + (ev.getUnmuteTimestamp() / 1000)
+							+ ">";
 
 				// Embed
 				embed.title("Public chat mute in " + DiscordBotModule.getServerName());

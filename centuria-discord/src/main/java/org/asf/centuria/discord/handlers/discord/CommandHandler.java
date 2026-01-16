@@ -1039,10 +1039,11 @@ public class CommandHandler {
 				}
 
 				// Log
-				EventBus.getInstance().dispatchEvent(new MiscModerationEvent("permissions.update",
-						"Removed all permissions from " + acc.getDisplayName() + "!",
-						Map.of("Former permission level", permLevel2, "New permission level", "member"),
-						modacc.getAccountID(), acc));
+				EventBus.getInstance()
+						.dispatchEvent(new MiscModerationEvent("permissions.update",
+								"Removed all permissions from " + acc.getDisplayName() + "!",
+								Map.of("Former permission level", permLevel2, "New permission level", "member"),
+								modacc.getAccountID(), acc));
 
 				return event.reply("Removed permissions from " + acc.getDisplayName());
 			}
@@ -1165,28 +1166,39 @@ public class CommandHandler {
 					}
 				}
 
-				// Mute
-				if (params.size() < 2)
-					return event.reply("Error: you need to specify one of the optional time arguments");
-
 				// Load params
 				int minutes = 0;
 				int hours = 0;
 				int days = 0;
+				String reason = "";
+				boolean permanent = true;
 				if (params.stream().anyMatch(t -> t.name().equals("minutes")) && !params.stream()
-						.filter(t -> t.name().equals("minutes")).findFirst().get().value().isAbsent())
+						.filter(t -> t.name().equals("minutes")).findFirst().get().value().isAbsent()) {
 					minutes = Integer.parseInt(
 							params.stream().filter(t -> t.name().equals("minutes")).findFirst().get().value().get());
-				if (params.stream().anyMatch(t -> t.name().equals("hours"))
-						&& !params.stream().filter(t -> t.name().equals("hours")).findFirst().get().value().isAbsent())
+					permanent = false;
+				}
+				if (params.stream().anyMatch(t -> t.name().equals("hours")) && !params.stream()
+						.filter(t -> t.name().equals("hours")).findFirst().get().value().isAbsent()) {
 					hours = Integer.parseInt(
 							params.stream().filter(t -> t.name().equals("hours")).findFirst().get().value().get());
+					permanent = false;
+				}
 				if (params.stream().anyMatch(t -> t.name().equals("days"))
-						&& !params.stream().filter(t -> t.name().equals("days")).findFirst().get().value().isAbsent())
+						&& !params.stream().filter(t -> t.name().equals("days")).findFirst().get().value().isAbsent()) {
 					days = Integer.parseInt(
 							params.stream().filter(t -> t.name().equals("days")).findFirst().get().value().get());
+					permanent = false;
+				}
+				if (params.stream().anyMatch(t -> t.name().equals("reason"))
+						&& !params.stream().filter(t -> t.name().equals("reason")).findFirst().get().value().isAbsent())
+					reason = params.stream().filter(t -> t.name().equals("reason")).findFirst().get().value().get();
+
 				event.deferReply().block();
-				acc.mute(days, hours, minutes, modacc.getAccountID(), null);
+				if (!permanent)
+					acc.mute(days, hours, minutes, modacc.getAccountID(), reason);
+				else
+					acc.permmute(modacc.getAccountID(), reason);
 				event.editReply("Muted player " + acc.getDisplayName()).block();
 				break;
 			}

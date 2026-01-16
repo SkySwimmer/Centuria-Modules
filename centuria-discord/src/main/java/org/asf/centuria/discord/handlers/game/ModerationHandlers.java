@@ -15,6 +15,8 @@ import org.asf.centuria.modules.events.accounts.AccountDisplayNameChangedEvent;
 import org.asf.centuria.modules.events.accounts.AccountMuteEvent;
 import org.asf.centuria.modules.events.accounts.AccountPardonEvent;
 import org.asf.centuria.modules.events.accounts.AccountRegistrationEvent;
+import org.asf.centuria.modules.events.accounts.AccountTradeBanEvent;
+import org.asf.centuria.modules.events.accounts.AccountTradePardonEvent;
 import org.asf.centuria.modules.events.accounts.MiscModerationEvent;
 import org.asf.centuria.modules.events.accounts.AccountKickEvent;
 
@@ -44,75 +46,8 @@ public class ModerationHandlers implements IEventReceiver {
 		}
 		moderationLog(ev.getModerationEventTitle(), userID,
 				ev.getTarget() != null ? ev.getTarget().getDisplayName() : null,
-				ev.getTarget() != null ? ev.getTarget().getAccountID() : null, data, ev.getIssuer(), null,
-				ev.isUrgent());
-	}
-
-	@EventListener
-	public void handleBan(AccountBanEvent ev) {
-		// Find discord client (if present)
-		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
-		if (userID != null) {
-			User user = null;
-			try {
-				user = DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block();
-			} catch (Exception e) {
-			}
-			if (user != null)
-				ApplicationManager.cancelApplication(user, false, "Centuria account was moderated");
-		}
-
-		// Log moderation
-		moderationLog("Ban", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
-				ev.isPermanent() ? "Ban type: **Permanent**" : ("Ban type: **Temporary** (" + ev.getDays() + " days)"),
-				ev.getIssuer(), ev.getReason(), true);
-
-		if (userID != null) {
-			// DM them if not appealed before
-			try {
-				EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
-
-				// Description content
-				String message = "You have been banned from our servers for unacceptable behavior.\n";
-				if (ev.getReason() != null)
-					message = "You have been banned from our servers:\n`" + ev.getReason() + "`\n";
-				message += "\n";
-				if (ev.isPermanent()) {
-					message += "This is a permanent ban, "
-							+ (ev.getAccount().getSaveSharedInventory().containsItem("appeallock")
-									? "you cannot log in until pardoned."
-									: " you can attempt to appeal by pressing the button below.")
-							+ "\n"
-							+ "Due to this being a permanent ban, you receive a singleplayer launcher with your data. However note that you will not be able to play with others, multiplayer is completely disabled.\n\nNote that if you have no mutual servers with the bot you cannot download the launcher, use the website if you are banned from the Discord server to obtain your data.";
-				} else
-					message += "This is a temporary ban, you cannot log on for " + ev.getDays() + " days.";
-
-				// Embed
-				embed.title((ev.isPermanent() ? "Permanently" : "Temporarily") + " banned from "
-						+ DiscordBotModule.getServerName());
-				embed.color(Color.RED);
-				embed.description(message);
-				embed.footer(DiscordBotModule.getServerName(),
-						DiscordBotModule.getClient().getSelf().block().getAvatarUrl());
-
-				// Message object
-				MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
-				msg.addEmbed(embed.build());
-
-				// Appeal button (if permanent)
-				if (ev.isPermanent() && !ev.getAccount().getSaveSharedInventory().containsItem("appeallock")) {
-					msg.addComponent(ActionRow.of(
-							Button.danger("appeal/" + userID + "/" + ev.getAccount().getAccountID(),
-									"Appeal for pardon"),
-							Button.success("downloadsingleplayerlauncher", "Download singleplayer launcher")));
-				}
-
-				// Send response
-				DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block().getPrivateChannel().block()
-						.createMessage(msg.build()).subscribe();
-			} catch (Exception e) {
-			}
-		}
+				ev.getTarget() != null ? ev.getTarget().getAccountID() : null, data.isEmpty() ? null : data,
+				ev.getIssuer(), null, ev.isUrgent());
 	}
 
 	@EventListener
@@ -290,6 +225,73 @@ public class ModerationHandlers implements IEventReceiver {
 	}
 
 	@EventListener
+	public void handleBan(AccountBanEvent ev) {
+		// Find discord client (if present)
+		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
+		if (userID != null) {
+			User user = null;
+			try {
+				user = DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block();
+			} catch (Exception e) {
+			}
+			if (user != null)
+				ApplicationManager.cancelApplication(user, false, "Centuria account was moderated");
+		}
+
+		// Log moderation
+		moderationLog("Ban", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
+				ev.isPermanent() ? "Ban type: **Permanent**" : ("Ban type: **Temporary** (" + ev.getDays() + " days)"),
+				ev.getIssuer(), ev.getReason(), true);
+
+		if (userID != null) {
+			// DM them if not appealed before
+			try {
+				EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
+
+				// Description content
+				String message = "You have been banned from our servers for unacceptable behavior.\n";
+				if (ev.getReason() != null)
+					message = "You have been banned from our servers:\n`" + ev.getReason() + "`\n";
+				message += "\n";
+				if (ev.isPermanent()) {
+					message += "This is a permanent ban, "
+							+ (ev.getAccount().getSaveSharedInventory().containsItem("appeallock")
+									? "you cannot log in until pardoned."
+									: " you can attempt to appeal by pressing the button below.")
+							+ "\n"
+							+ "Due to this being a permanent ban, you receive a singleplayer launcher with your data. However note that you will not be able to play with others, multiplayer is completely disabled.\n\nNote that if you have no mutual servers with the bot you cannot download the launcher, use the website if you are banned from the Discord server to obtain your data.";
+				} else
+					message += "This is a temporary ban, you cannot log on for " + ev.getDays() + " days.";
+
+				// Embed
+				embed.title((ev.isPermanent() ? "Permanently" : "Temporarily") + " banned from "
+						+ DiscordBotModule.getServerName());
+				embed.color(Color.RED);
+				embed.description(message);
+				embed.footer(DiscordBotModule.getServerName(),
+						DiscordBotModule.getClient().getSelf().block().getAvatarUrl());
+
+				// Message object
+				MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
+				msg.addEmbed(embed.build());
+
+				// Appeal button (if permanent)
+				if (ev.isPermanent() && !ev.getAccount().getSaveSharedInventory().containsItem("appeallock")) {
+					msg.addComponent(ActionRow.of(
+							Button.danger("appeal/" + userID + "/" + ev.getAccount().getAccountID(),
+									"Appeal for pardon"),
+							Button.success("downloadsingleplayerlauncher", "Download singleplayer launcher")));
+				}
+
+				// Send response
+				DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block().getPrivateChannel().block()
+						.createMessage(msg.build()).subscribe();
+			} catch (Exception e) {
+			}
+		}
+	}
+
+	@EventListener
 	public void handlePardon(AccountPardonEvent ev) {
 		// Find discord client (if present)
 		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
@@ -315,6 +317,92 @@ public class ModerationHandlers implements IEventReceiver {
 
 				// Embed
 				embed.title("Pardoned in " + DiscordBotModule.getServerName());
+				embed.color(Color.GREEN);
+				embed.description(message);
+				embed.footer(DiscordBotModule.getServerName(),
+						DiscordBotModule.getClient().getSelf().block().getAvatarUrl());
+
+				// Message object
+				MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
+				msg.addEmbed(embed.build());
+
+				// Send response
+				DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block().getPrivateChannel().block()
+						.createMessage(msg.build()).subscribe();
+			} catch (Exception e) {
+			}
+		}
+	}
+
+	@EventListener
+	public void handleTradeBan(AccountTradeBanEvent ev) {
+		// Find discord client (if present)
+		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
+
+		// Log moderation
+		moderationLog("Banned from trading", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
+				ev.isPermanent() ? "Trade ban type: **Permanent**"
+						: ("Trade ban type: **Temporary** (" + ev.getDays() + " days)"),
+				ev.getIssuer(), ev.getReason(), true);
+
+		if (userID != null) {
+			// DM them
+			try {
+				EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
+
+				// Description content
+				String message = "Your trading features have been suspended.\n";
+				if (ev.getReason() != null)
+					message = "Your trading features have been suspended:\n`" + ev.getReason() + "`\n";
+				message += "\n";
+				if (ev.isPermanent()) {
+					message += "This is a permanent ban, you cannot use trading features until the server staff pardons you.";
+				} else
+					message += "This is a temporary ban, you cannot use trading features for " + ev.getDays()
+							+ " days.";
+
+				// Embed
+				embed.title((ev.isPermanent() ? "Permanently" : "Temporarily") + " banned from trading in "
+						+ DiscordBotModule.getServerName());
+				embed.color(Color.RED);
+				embed.description(message);
+				embed.footer(DiscordBotModule.getServerName(),
+						DiscordBotModule.getClient().getSelf().block().getAvatarUrl());
+
+				// Message object
+				MessageCreateSpec.Builder msg = MessageCreateSpec.builder();
+				msg.addEmbed(embed.build());
+
+				// Send response
+				DiscordBotModule.getClient().getUserById(Snowflake.of(userID)).block().getPrivateChannel().block()
+						.createMessage(msg.build()).subscribe();
+			} catch (Exception e) {
+			}
+		}
+	}
+
+	@EventListener
+	public void handleTradePardon(AccountTradePardonEvent ev) {
+		// Find discord client (if present)
+		String userID = LinkUtils.getDiscordAccountFrom(ev.getAccount());
+
+		// Log moderation
+		moderationLog("Removed trading ban", userID, ev.getAccount().getDisplayName(), ev.getAccount().getAccountID(),
+				null, ev.getIssuer(), ev.getReason(), true);
+
+		if (userID != null) {
+			// DM them
+			try {
+				EmbedCreateSpec.Builder embed = EmbedCreateSpec.builder();
+
+				// Description content
+				String message = "Your trade ban was pardoned and all trading features have been restored.";
+				if (ev.getReason() != null) {
+					message += "\nReason: " + ev.getReason();
+				}
+
+				// Embed
+				embed.title("Trading features restored in " + DiscordBotModule.getServerName());
 				embed.color(Color.GREEN);
 				embed.description(message);
 				embed.footer(DiscordBotModule.getServerName(),

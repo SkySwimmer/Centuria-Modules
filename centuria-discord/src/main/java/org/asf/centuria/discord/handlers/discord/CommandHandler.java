@@ -17,6 +17,7 @@ import org.asf.centuria.discord.DiscordBotModule;
 import org.asf.centuria.discord.LinkUtils;
 import org.asf.centuria.discord.applications.ApplicationManager;
 import org.asf.centuria.entities.players.Player;
+import org.asf.centuria.entities.trading.Trade;
 import org.asf.centuria.ipbans.IpBanManager;
 import org.asf.centuria.modules.eventbus.EventBus;
 import org.asf.centuria.modules.events.accounts.MiscModerationEvent;
@@ -277,6 +278,50 @@ public class CommandHandler {
 				.addOption(ApplicationCommandOptionData.builder().name("code")
 						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Application code")
 						.required(true).build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The account trade-ban command
+	 */
+	public static ApplicationCommandOptionData tradeBan() {
+		return ApplicationCommandOptionData.builder().name("tradepermban")
+				.description("Permanently bans a player from trading")
+				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player totrade- ban")
+						.required(true).build())
+				.addOption(ApplicationCommandOptionData.builder().name("reason")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Ban reason").build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The account trade-ban command
+	 */
+	public static ApplicationCommandOptionData tradeTempBan() {
+		return ApplicationCommandOptionData.builder().name("tradetempban")
+				.description("Temporarily bans a player from trading")
+				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player to trade-ban")
+						.required(true).build())
+				.addOption(ApplicationCommandOptionData.builder().name("days")
+						.type(ApplicationCommandOption.Type.INTEGER.getValue())
+						.description("Days to ban the player from trading for").required(true).build())
+				.addOption(ApplicationCommandOptionData.builder().name("reason")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Ban reason").build())
+				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
+	}
+
+	/**
+	 * The account trade-pardon command
+	 */
+	public static ApplicationCommandOptionData tradePardon() {
+		return ApplicationCommandOptionData.builder().name("tradepardon").description("Removes trade bans from players")
+				.addOption(ApplicationCommandOptionData.builder().name("centuria-displayname")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Player to pardon")
+						.required(true).build())
+				.addOption(ApplicationCommandOptionData.builder().name("reason")
+						.type(ApplicationCommandOption.Type.STRING.getValue()).description("Pardon reason").build())
 				.type(ApplicationCommandOption.Type.SUB_COMMAND.getValue()).build();
 	}
 
@@ -1404,6 +1449,196 @@ public class CommandHandler {
 						Arrays.asList(ActionRow.of(TextInput.paragraph("message", "Message description", 1, 3000))))
 						.block();
 
+				break;
+			}
+			case "tradepermban": {
+				// Required permissions: mod (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "moderator")) {
+					event.reply("**Error:** No Centuria moderator permissions.").block();
+					return Mono.empty();
+				}
+
+				// Find player UUID
+				var params = data.options().get().get(0).options().get();
+				String uuid = AccountManager.getInstance().getUserByDisplayName(params.get(0).value().get());
+				if (uuid == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				CenturiaAccount acc = AccountManager.getInstance().getAccount(uuid);
+				if (acc == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+
+				// Check rank
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					if ((GameServer
+							.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+									.get("permissionLevel").getAsString(), "developer")
+							&& !GameServer.hasPerm(permLevel, "developer"))
+							|| GameServer
+									.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+											.get("permissionLevel").getAsString(), "admin")
+									&& !GameServer.hasPerm(permLevel, "admin")) {
+						event.reply("**Error:** unable to moderate higher-ranking members.").block();
+						return Mono.empty();
+					}
+				}
+
+				// Ban
+				if (params.size() == 1) {
+					event.deferReply().block();
+					Trade.tradeBanPermanent(acc, modacc.getAccountID(), null);
+					event.editReply("Trade-banned player " + acc.getDisplayName()).block();
+				} else if (params.size() == 2) {
+					event.deferReply().block();
+					Trade.tradeBanPermanent(acc, modacc.getAccountID(), params.get(1).value().get());
+					event.editReply("Trade-banned player " + acc.getDisplayName() + ": " + params.get(1).value().get())
+							.block();
+				}
+				break;
+			}
+			case "tradetempban": {
+				// Required permissions: mod (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "moderator")) {
+					event.reply("**Error:** No Centuria moderator permissions.").block();
+					return Mono.empty();
+				}
+
+				// Find player UUID
+				var params = data.options().get().get(0).options().get();
+				String uuid = AccountManager.getInstance().getUserByDisplayName(params.get(0).value().get());
+				if (uuid == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				CenturiaAccount acc = AccountManager.getInstance().getAccount(uuid);
+				if (acc == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+
+				// Check rank
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					if ((GameServer
+							.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+									.get("permissionLevel").getAsString(), "developer")
+							&& !GameServer.hasPerm(permLevel, "developer"))
+							|| GameServer
+									.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+											.get("permissionLevel").getAsString(), "admin")
+									&& !GameServer.hasPerm(permLevel, "admin")) {
+						event.reply("**Error:** unable to moderate higher-ranking members.").block();
+						return Mono.empty();
+					}
+				}
+
+				// Tempban
+				if (params.size() == 2) {
+					event.deferReply().block();
+					Trade.tradeBanTemp(acc, Integer.valueOf(params.get(1).value().get()), modacc.getAccountID(), null);
+					event.editReply("Temporarily trade-banned player " + acc.getDisplayName()).block();
+				} else if (params.size() == 3) {
+					event.deferReply().block();
+					Trade.tradeBanTemp(acc, Integer.valueOf(params.get(1).value().get()), modacc.getAccountID(),
+							params.get(2).value().get());
+					event.editReply("Temporarily trade-banned player " + acc.getDisplayName() + ": "
+							+ params.get(2).value().get()).block();
+				}
+				break;
+			}
+			case "tradepardon": {
+				// Required permissions: mod (ingame)
+				CenturiaAccount modacc = LinkUtils
+						.getAccountByDiscordID(event.getInteraction().getUser().getId().asString());
+				if (modacc == null) {
+					event.reply("**Error:** You dont have a Centuria account linked to your Discord account").block();
+					return Mono.empty();
+				}
+
+				String permLevel = "member";
+				if (modacc.getSaveSharedInventory().containsItem("permissions")) {
+					permLevel = modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+							.get("permissionLevel").getAsString();
+				}
+				if (!GameServer.hasPerm(permLevel, "moderator")) {
+					event.reply("**Error:** No Centuria moderator permissions.").block();
+					return Mono.empty();
+				}
+
+				// Find player UUID
+				var params = data.options().get().get(0).options().get();
+				String uuid = AccountManager.getInstance().getUserByDisplayName(params.get(0).value().get());
+				if (uuid == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				CenturiaAccount acc = AccountManager.getInstance().getAccount(uuid);
+				if (acc == null) {
+					// Respond with error message
+					event.reply("**Error:** player not recognized.").block();
+					return Mono.empty();
+				}
+				if (!Trade.isTradeBanned(acc)) {
+					event.reply("**Error:** player is not banned from trading.").block();
+					return Mono.empty();
+				}
+
+				// Check rank
+				if (acc.getSaveSharedInventory().containsItem("permissions")) {
+					if ((GameServer
+							.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+									.get("permissionLevel").getAsString(), "developer")
+							&& !GameServer.hasPerm(permLevel, "developer"))
+							|| GameServer
+									.hasPerm(modacc.getSaveSharedInventory().getItem("permissions").getAsJsonObject()
+											.get("permissionLevel").getAsString(), "admin")
+									&& !GameServer.hasPerm(permLevel, "admin")) {
+						event.reply("**Error:** unable to moderate higher-ranking members.").block();
+						return Mono.empty();
+					}
+				}
+
+				// Pardon
+				if (params.size() == 1) {
+					event.deferReply().block();
+					Trade.tradeBanPardon(acc, modacc.getAccountID(), null);
+					event.editReply("Pardoned player " + acc.getDisplayName()).block();
+				} else if (params.size() == 2) {
+					event.deferReply().block();
+					Trade.tradeBanPardon(acc, modacc.getAccountID(), params.get(1).value().get());
+					event.editReply("Pardoned player " + acc.getDisplayName()).block();
+				}
 				break;
 			}
 			}

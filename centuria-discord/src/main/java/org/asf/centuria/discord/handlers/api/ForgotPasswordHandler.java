@@ -13,17 +13,17 @@ import org.asf.centuria.modules.eventbus.EventListener;
 import org.asf.centuria.modules.eventbus.IEventReceiver;
 import org.asf.centuria.modules.events.servers.APIServerStartupEvent;
 import org.asf.connective.RemoteClient;
-import org.asf.connective.processors.HttpPushProcessor;
+import org.asf.connective.handlers.HttpPushHandler;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.spec.MessageCreateSpec;
 
-public class ForgotPasswordHandler extends HttpPushProcessor implements IEventReceiver {
+public class ForgotPasswordHandler extends HttpPushHandler implements IEventReceiver {
 
 	@Override
-	public void process(String pth, String method, RemoteClient client, String contentType) {
+	public void handle(String pth, String method, RemoteClient client, String contentType) {
 		// Parse account name
 		String path = this.getRequestPath().substring(path().length());
 		if (path.isEmpty()) {
@@ -106,11 +106,11 @@ public class ForgotPasswordHandler extends HttpPushProcessor implements IEventRe
 
 	@EventListener
 	public void startAPI(APIServerStartupEvent event) {
-		event.getServer().registerProcessor(this);
+		event.getServer().registerHandler(this);
 	}
 
 	@Override
-	public HttpPushProcessor createNewInstance() {
+	public HttpPushHandler createNewInstance() {
 		return new ForgotPasswordHandler();
 	}
 

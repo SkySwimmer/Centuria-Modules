@@ -63,7 +63,7 @@ public class LevelUpdatePacket extends NexusPacket {
 			CompletedLevel lv = new CompletedLevel();
 			lv.level = reader.readInt();
 			lv.levelUpXp = reader.readInt();
-			lv.levelUpRewardDefId = reader.readInt();
+			lv.levelUpRewardDefId = reader.readString();
 			lv.levelUpRewardQuantity = reader.readInt();
 			lv.levelUpRewardGiftId = reader.readString();
 			completedLevels.add(lv);
@@ -94,7 +94,7 @@ public class LevelUpdatePacket extends NexusPacket {
 		for (CompletedLevel lvl : completedLevels) {
 			writer.writeInt(lvl.level);
 			writer.writeInt(lvl.levelUpXp);
-			writer.writeInt(lvl.levelUpRewardDefId);
+			writer.writeString(lvl.levelUpRewardDefId);
 			writer.writeInt(lvl.levelUpRewardQuantity);
 			writer.writeString(lvl.levelUpRewardGiftId);
 		}

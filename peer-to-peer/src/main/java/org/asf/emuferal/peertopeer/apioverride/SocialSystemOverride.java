@@ -7,19 +7,19 @@ import org.asf.centuria.accounts.AccountManager;
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.networking.http.api.FallbackAPIProcessor;
 import org.asf.connective.RemoteClient;
-import org.asf.connective.processors.HttpPushProcessor;
+import org.asf.connective.handlers.HttpPushHandler;
 import org.asf.emuferal.peertopeer.PeerToPeerModule;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-public class SocialSystemOverride extends HttpPushProcessor {
+public class SocialSystemOverride extends HttpPushHandler {
 
 	private FallbackAPIProcessor fallback = new FallbackAPIProcessor();
 
 	@Override
-	public void process(String pth, String method, RemoteClient client, String contentType) {
+	public void handle(String pth, String method, RemoteClient client, String contentType) {
 		String path = this.getRequestPath();
 		AccountManager manager = AccountManager.getInstance();
 
@@ -70,7 +70,7 @@ public class SocialSystemOverride extends HttpPushProcessor {
 
 			FallbackAPIProcessor proc = (FallbackAPIProcessor) fallback.instantiate(getServer(), getRequest(),
 					getResponse());
-			proc.process(path, method, client);
+			proc.handleRequest(path, method, client);
 		} catch (Exception e) {
 			if (Centuria.debugMode) {
 				System.err.println("[FALLBACKAPI] ERROR : " + e.getMessage() + " )");
@@ -80,7 +80,7 @@ public class SocialSystemOverride extends HttpPushProcessor {
 	}
 
 	@Override
-	public HttpPushProcessor createNewInstance() {
+	public HttpPushHandler createNewInstance() {
 		return new SocialSystemOverride();
 	}
 

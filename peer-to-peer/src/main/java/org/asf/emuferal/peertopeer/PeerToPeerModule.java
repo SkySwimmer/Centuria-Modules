@@ -267,7 +267,7 @@ public class PeerToPeerModule implements ICenturiaModule {
 				if (!(plr.client instanceof P2PSmartfoxClient)) {
 					if (plr.levelType == 2 && plr.room.equals("sanctuary_" + player.id)) {
 						RoomJoinPacket packet = new RoomJoinPacket();
-						packet.levelID = 820;
+						packet.levelID = "820";
 						new Thread(() -> {
 							try {
 								Centuria.systemMessage(plr, player.displayName
@@ -395,7 +395,7 @@ public class PeerToPeerModule implements ICenturiaModule {
 					if (!(plr.client instanceof P2PSmartfoxClient)) {
 						if (plr.levelType == 2 && plr.room.equals("sanctuary_" + player.id)) {
 							RoomJoinPacket packet = new RoomJoinPacket();
-							packet.levelID = 820;
+							packet.levelID = "820";
 							new Thread(() -> {
 								try {
 									Centuria.systemMessage(plr, player.displayName
@@ -498,6 +498,6 @@ public class PeerToPeerModule implements ICenturiaModule {
 
 	@EventListener
 	public void apiSetup(APIServerStartupEvent event) {
-		event.getServer().registerProcessor(new SocialSystemOverride());
+		event.getServer().registerHandler(new SocialSystemOverride());
 	}
 }

@@ -138,7 +138,7 @@ public class PeerToPeerGameServer extends GameServer {
 				// Find player look
 				String look = player.player.activeLook;
 				JsonObject lookData = player.player.account.getSaveSpecificInventory().getAccessor()
-						.findInventoryObject("avatars", look);
+						.findInventoryObjectByItemId("avatars", look);
 				if (lookData != null) {
 					player.look = lookData.get("components").getAsJsonObject().get("AvatarLook").getAsJsonObject()
 							.get("info").getAsJsonObject().toString();
@@ -159,7 +159,7 @@ public class PeerToPeerGameServer extends GameServer {
 
 						// Object creation parameters
 						pkt.id = plr.id;
-						pkt.defId = 852;
+						pkt.defId = "852";
 						pkt.ownerId = plr.id;
 
 						pkt.lastMove = new WorldObjectMoveNodeData();
@@ -217,7 +217,7 @@ public class PeerToPeerGameServer extends GameServer {
 				String look = player.player.activeLook;
 				player.currentLook = player.player.activeLook;
 				JsonObject lookData = player.player.account.getSaveSpecificInventory().getAccessor()
-						.findInventoryObject("avatars", look).get("components").getAsJsonObject().get("AvatarLook")
+						.findInventoryObjectByItemId("avatars", look).get("components").getAsJsonObject().get("AvatarLook")
 						.getAsJsonObject().get("info").getAsJsonObject();
 				if (lookData != null) {
 					player.look = lookData.toString();
@@ -247,54 +247,54 @@ public class PeerToPeerGameServer extends GameServer {
 				rd.read();
 				String action = rd.read();
 				switch (action) {
-				case "8930": { // Sleep
-					player.action = 40;
-					break;
-				}
-				case "9108": { // Tired
-					player.action = 41;
-					break;
-				}
-				case "9116": { // Sit
-					player.action = 60;
-					break;
-				}
-				case "9121": { // Mad
-					player.action = 70;
-					break;
-				}
-				case "9122": { // Excite
-					player.action = 80;
-					break;
-				}
-				case "9143": { // Sad
-					player.action = 180;
-					break;
-				}
-				case "9151": { // Flex
-					player.action = 200;
-					break;
-				}
-				case "9190": { // Play
-					player.action = 210;
-					break;
-				}
-				case "9147": { // Scared
-					player.action = 190;
-					break;
-				}
-				case "9139": { // Eat
-					player.action = 170;
-					break;
-				}
-				case "9131": { // Yes
-					player.action = 110;
-					break;
-				}
-				case "9135": { // No
-					player.action = 120;
-					break;
-				}
+					case "8930": { // Sleep
+						player.action = 40;
+						break;
+					}
+					case "9108": { // Tired
+						player.action = 41;
+						break;
+					}
+					case "9116": { // Sit
+						player.action = 60;
+						break;
+					}
+					case "9121": { // Mad
+						player.action = 70;
+						break;
+					}
+					case "9122": { // Excite
+						player.action = 80;
+						break;
+					}
+					case "9143": { // Sad
+						player.action = 180;
+						break;
+					}
+					case "9151": { // Flex
+						player.action = 200;
+						break;
+					}
+					case "9190": { // Play
+						player.action = 210;
+						break;
+					}
+					case "9147": { // Scared
+						player.action = 190;
+						break;
+					}
+					case "9139": { // Eat
+						player.action = 170;
+						break;
+					}
+					case "9131": { // Yes
+						player.action = 110;
+						break;
+					}
+					case "9135": { // No
+						player.action = 120;
+						break;
+					}
 				}
 
 				// Create sync packet

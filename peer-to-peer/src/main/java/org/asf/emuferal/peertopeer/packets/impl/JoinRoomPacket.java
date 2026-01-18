@@ -19,7 +19,7 @@ public class JoinRoomPacket extends NexusPacket {
 	public boolean success;
 	public String room;
 	public String teleport;
-	public int levelID;
+	public String levelID;
 	public int levelType;
 
 	@Override
@@ -39,7 +39,7 @@ public class JoinRoomPacket extends NexusPacket {
 		if (success) {
 			room = reader.readString();
 			teleport = reader.readString();
-			levelID = reader.readInt();
+			levelID = reader.readString();
 			levelType = reader.readInt();
 		}
 	}
@@ -51,7 +51,7 @@ public class JoinRoomPacket extends NexusPacket {
 		if (success) {
 			writer.writeString(room);
 			writer.writeString(teleport);
-			writer.writeInt(levelID);
+			writer.writeString(levelID);
 			writer.writeInt(levelType);
 		}
 	}

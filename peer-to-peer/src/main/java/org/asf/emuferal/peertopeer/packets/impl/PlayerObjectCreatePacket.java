@@ -25,7 +25,7 @@ public class PlayerObjectCreatePacket extends NexusPacket {
 
 	public String id;
 	public String room;
-	public int levelID;
+	public String levelID;
 	public int levelType;
 	public Vector3 position;
 	public Quaternion rotation;
@@ -45,7 +45,7 @@ public class PlayerObjectCreatePacket extends NexusPacket {
 	public void parse(PacketReader reader) throws IOException {
 		id = reader.readString();
 		room = reader.readString();
-		levelID = reader.readInt();
+		levelID = reader.readString();
 		levelType = reader.readInt();
 		position = reader.readVector3();
 		rotation = reader.readQuaternion();
@@ -56,7 +56,7 @@ public class PlayerObjectCreatePacket extends NexusPacket {
 	public void write(PacketWriter writer) throws IOException {
 		writer.writeString(id);
 		writer.writeString(room);
-		writer.writeInt(levelID);
+		writer.writeString(levelID);
 		writer.writeInt(levelType);
 		writer.writeVector3(position);
 		writer.writeQuaternion(rotation);
@@ -85,7 +85,7 @@ public class PlayerObjectCreatePacket extends NexusPacket {
 
 		// Object creation parameters
 		packet.id = player.id;
-		packet.defId = 852;
+		packet.defId = "852";
 		packet.ownerId = player.id;
 
 		packet.lastMove = new WorldObjectMoveNodeData();

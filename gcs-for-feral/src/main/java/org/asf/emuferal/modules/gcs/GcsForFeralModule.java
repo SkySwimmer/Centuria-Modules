@@ -21,6 +21,7 @@ import org.asf.centuria.modules.events.chat.ChatMessageReceivedEvent;
 import org.asf.centuria.modules.events.chatcommands.ChatCommandEvent;
 import org.asf.centuria.modules.events.chatcommands.ModuleCommandSyntaxListEvent;
 import org.asf.centuria.networking.chatserver.ChatClient;
+import org.asf.centuria.networking.chatserver.rooms.ChatRoom;
 import org.asf.centuria.networking.chatserver.rooms.ChatRoomTypes;
 import org.asf.centuria.networking.gameserver.GameServer;
 import org.asf.centuria.social.SocialManager;
@@ -114,7 +115,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 				}
 
 				// Join it
-				event.getClient().joinRoom(id, true);
+				event.getClient().joinRoom(id, ChatRoomTypes.PRIVATE_CHAT);
 			}
 
 			// Remove nonexistent and invalid gcs
@@ -392,7 +393,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 							// Send update
 							JsonObject res = new JsonObject();
 							res.add("conversation", event.getServer().roomObject(event.getConversationId(),
-									true, event.getClient().getPlayer().getAccountID()));
+									ChatRoomTypes.PRIVATE_CHAT, event.getClient().getPlayer().getAccountID()));
 							res.addProperty("eventId", "conversations.get");
 							res.addProperty("success", true);
 							event.getClient().sendPacket(res);
@@ -811,7 +812,7 @@ public class GcsForFeralModule implements ICenturiaModule {
 		// Join GC
 		ChatClient cl = Centuria.chatServer.getClient(acc.getAccountID());
 		if (cl != null)
-			cl.joinRoom(id, true);
+			cl.joinRoom(id, ChatRoomTypes.PRIVATE_CHAT);
 		DMManager.getInstance().addParticipant(id, acc.getAccountID());
 
 		// Send join packets

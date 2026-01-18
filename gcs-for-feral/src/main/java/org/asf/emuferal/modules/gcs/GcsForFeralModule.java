@@ -22,6 +22,7 @@ import org.asf.centuria.modules.events.chatcommands.ChatCommandEvent;
 import org.asf.centuria.modules.events.chatcommands.ModuleCommandSyntaxListEvent;
 import org.asf.centuria.networking.chatserver.ChatClient;
 import org.asf.centuria.networking.chatserver.rooms.ChatRoomTypes;
+import org.asf.centuria.networking.gameserver.GameServer;
 import org.asf.centuria.social.SocialManager;
 
 import com.google.gson.JsonArray;
@@ -526,12 +527,13 @@ public class GcsForFeralModule implements ICenturiaModule {
 								// Add participant
 								newParticipants.add(participant);
 							}
-							
+
 							// Add self
 							newParticipants.add(owner);
 
 							// Save
-							DMManager.getInstance().updateDMParticipants(event.getConversationId(), newParticipants.toArray(t -> new String[t]));
+							DMManager.getInstance().updateDMParticipants(event.getConversationId(),
+									newParticipants.toArray(t -> new String[t]));
 
 							// Send system message
 							systemMessage(id, "Transferred ownership owner: " + acc.getDisplayName());
@@ -941,9 +943,30 @@ public class GcsForFeralModule implements ICenturiaModule {
 			res.addProperty("success", true);
 
 			// Broadcast
-			for (ChatClient cl : Centuria.chatServer.getClients())
-				if (cl.isInRoom(id))
-					cl.sendPacket(res);
+			for (ChatClient cl : Centuria.chatServer.getClients()) {
+				if (cl.isInRoom(id)) {
+					// Check moderator perms
+					String permLevel = "member";
+					if (cl.getPlayer().getSaveSharedInventory().containsItem("permissions")) {
+						permLevel = cl.getPlayer().getSaveSharedInventory().getItem("permissions")
+								.getAsJsonObject().get("permissionLevel").getAsString();
+					}
+
+					// Check if all the others blocked the member
+					boolean hasNonBlocked = false;
+					for (String p2 : DMManager.getInstance().getDMParticipants(id)) {
+						if (!p2.equals(cl.getPlayer().getAccountID()) && !p2.startsWith("plaintext:")) {
+							if (!SocialManager.getInstance().socialListExists(p2)
+									|| !SocialManager.getInstance().getPlayerIsBlocked(p2,
+											cl.getPlayer().getAccountID()))
+								hasNonBlocked = true;
+						}
+					}
+
+					if (hasNonBlocked || GameServer.hasPerm(permLevel, "moderator"))
+						cl.sendPacket(res);
+				}
+			}
 		}
 	}
 

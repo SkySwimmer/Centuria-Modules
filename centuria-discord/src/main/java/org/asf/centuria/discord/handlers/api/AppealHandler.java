@@ -15,7 +15,7 @@ import org.asf.centuria.modules.eventbus.EventListener;
 import org.asf.centuria.modules.eventbus.IEventReceiver;
 import org.asf.centuria.modules.events.servers.APIServerStartupEvent;
 import org.asf.connective.RemoteClient;
-import org.asf.connective.processors.HttpPushProcessor;
+import org.asf.connective.handlers.HttpPushHandler;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -26,10 +26,10 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.spec.MessageCreateSpec;
 
-public class AppealHandler extends HttpPushProcessor implements IEventReceiver {
+public class AppealHandler extends HttpPushHandler implements IEventReceiver {
 
 	@Override
-	public void process(String path, String method, RemoteClient client, String contentType) {
+	public void handle(String path, String method, RemoteClient client, String contentType) {
 		try {
 			// Parse body
 			ByteArrayOutputStream strm = new ByteArrayOutputStream();
@@ -197,11 +197,11 @@ public class AppealHandler extends HttpPushProcessor implements IEventReceiver {
 
 	@EventListener
 	public void startAPI(APIServerStartupEvent event) {
-		event.getServer().registerProcessor(this);
+		event.getServer().registerHandler(this);
 	}
 
 	@Override
-	public HttpPushProcessor createNewInstance() {
+	public HttpPushHandler createNewInstance() {
 		return new AppealHandler();
 	}
 

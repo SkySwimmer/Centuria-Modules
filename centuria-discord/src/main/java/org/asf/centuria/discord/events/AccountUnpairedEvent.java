@@ -2,7 +2,6 @@ package org.asf.centuria.discord.events;
 
 import org.asf.centuria.accounts.CenturiaAccount;
 import org.asf.centuria.modules.eventbus.EventObject;
-import org.asf.centuria.modules.eventbus.EventPath;
 
 /**
  * 
@@ -11,7 +10,6 @@ import org.asf.centuria.modules.eventbus.EventPath;
  * @author Sky Swimmer - AerialWorks Software Foundation
  *
  */
-@EventPath("accounts.discord.unpair")
 public class AccountUnpairedEvent extends EventObject {
 
 	private CenturiaAccount account;
@@ -20,11 +18,6 @@ public class AccountUnpairedEvent extends EventObject {
 	public AccountUnpairedEvent(CenturiaAccount account, String userId) {
 		this.account = account;
 		this.userId = userId;
-	}
-
-	@Override
-	public String eventPath() {
-		return "accounts.discord.unpair";
 	}
 
 	/**

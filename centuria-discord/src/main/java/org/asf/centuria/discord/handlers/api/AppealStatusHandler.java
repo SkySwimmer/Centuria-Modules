@@ -9,15 +9,15 @@ import org.asf.centuria.modules.eventbus.EventListener;
 import org.asf.centuria.modules.eventbus.IEventReceiver;
 import org.asf.centuria.modules.events.servers.APIServerStartupEvent;
 import org.asf.connective.RemoteClient;
-import org.asf.connective.processors.HttpPushProcessor;
+import org.asf.connective.handlers.HttpPushHandler;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class AppealStatusHandler extends HttpPushProcessor implements IEventReceiver {
+public class AppealStatusHandler extends HttpPushHandler implements IEventReceiver {
 
 	@Override
-	public void process(String path, String method, RemoteClient client, String contentType) {
+	public void handle(String path, String method, RemoteClient client, String contentType) {
 		try {
 			// Load manager
 			AccountManager manager = AccountManager.getInstance();
@@ -96,11 +96,11 @@ public class AppealStatusHandler extends HttpPushProcessor implements IEventRece
 
 	@EventListener
 	public void startAPI(APIServerStartupEvent event) {
-		event.getServer().registerProcessor(this);
+		event.getServer().registerHandler(this);
 	}
 
 	@Override
-	public HttpPushProcessor createNewInstance() {
+	public HttpPushHandler createNewInstance() {
 		return new AppealStatusHandler();
 	}
 

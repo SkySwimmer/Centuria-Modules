@@ -31,7 +31,7 @@ public class P2PPlayer {
 	public int action;
 	
 	public boolean roomReady = false;
-	public int levelID;
+	public String levelID;
 	public int levelType;
 
 }

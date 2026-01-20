@@ -179,7 +179,8 @@ public class DiscordBotModule implements ICenturiaModule {
 					.addOption(CommandHandler.pardon()).addOption(CommandHandler.generateClearanceCode())
 					.addOption(CommandHandler.mute()).addOption(CommandHandler.ipBan())
 					.addOption(CommandHandler.makeModerator()).addOption(CommandHandler.makeAdmin())
-					.addOption(CommandHandler.removePerms()).addOption(CommandHandler.dmAnonymous())
+					.addOption(CommandHandler.removePerms()).addOption(CommandHandler.retryAutomaticUpdate())
+					.addOption(CommandHandler.forceInstallUpdate())
 					.addOption(CommandHandler.generateApplicationCode()).addOption(CommandHandler.apply())
 					.addOption(CommandHandler.createApplicationPanel()).addOption(CommandHandler.tradeBan())
 					.addOption(CommandHandler.tradeTempBan()).addOption(CommandHandler.tradePardon()).build();

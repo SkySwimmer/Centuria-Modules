@@ -2,7 +2,6 @@ package org.asf.centuria.discord.handlers.game;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -147,7 +146,10 @@ public class AnnouncementHandlers implements IEventReceiver {
 					MessageCreateSpec.Builder builder = MessageCreateSpec.builder();
 					builder.content(message);
 					if (files != null) {
-
+						// Attach files
+						for (String file : files.keySet()) {
+							builder.addFile(file, files.get(file));
+						}
 					}
 					channel.createMessage(srvMessage).block();
 				} catch (Exception e) {

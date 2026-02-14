@@ -21,7 +21,6 @@ import org.asf.centuria.modules.events.chat.ChatMessageReceivedEvent;
 import org.asf.centuria.modules.events.chatcommands.ChatCommandEvent;
 import org.asf.centuria.modules.events.chatcommands.ModuleCommandSyntaxListEvent;
 import org.asf.centuria.networking.chatserver.ChatClient;
-import org.asf.centuria.networking.chatserver.rooms.ChatRoom;
 import org.asf.centuria.networking.chatserver.rooms.ChatRoomTypes;
 import org.asf.centuria.networking.gameserver.GameServer;
 import org.asf.centuria.social.SocialManager;

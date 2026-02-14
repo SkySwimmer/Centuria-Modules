@@ -51,7 +51,9 @@ public class UpdateDisplayNameHandler {
 		}
 
 		// Check if the name is in use
-		if (manager.isDisplayNameInUse(newName)) {
+		if ((manager.isDisplayNameInUse(newName) && (manager.getUserByDisplayName(newName) == null
+				|| !manager.getUserByDisplayName(newName).equals(account.getAccountID())))
+				|| (manager.isDisplayNameInUse(newName) && account.isRenameRequired())) {
 			// Reply with error
 			return event.reply("Selected display name is already in use.");
 		}

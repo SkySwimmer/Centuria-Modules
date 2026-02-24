@@ -110,7 +110,6 @@ public class PeerToPeerGameServer extends GameServer {
 	}
 
 	private void onReceive(SmartfoxClient client, ISmartfoxPacket packet, String rawPacket) {
-
 		// Handle game client packets
 		if (packet != null) {
 			if (packet instanceof WorldReadyPacket) {
@@ -217,7 +216,8 @@ public class PeerToPeerGameServer extends GameServer {
 				String look = player.player.activeLook;
 				player.currentLook = player.player.activeLook;
 				JsonObject lookData = player.player.account.getSaveSpecificInventory().getAccessor()
-						.findInventoryObjectByItemId("avatars", look).get("components").getAsJsonObject().get("AvatarLook")
+						.findInventoryObjectByItemId("avatars", look).get("components").getAsJsonObject()
+						.get("AvatarLook")
 						.getAsJsonObject().get("info").getAsJsonObject();
 				if (lookData != null) {
 					player.look = lookData.toString();

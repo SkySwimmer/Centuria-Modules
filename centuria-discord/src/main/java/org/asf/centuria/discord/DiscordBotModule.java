@@ -186,8 +186,9 @@ public class DiscordBotModule implements ICenturiaModule {
 					.addOption(CommandHandler.tradeTempBan()).addOption(CommandHandler.tradePardon()).build();
 
 			// Connect
-			client.gateway().setEnabledIntents(IntentSet.of(Intent.GUILD_PRESENCES, Intent.GUILD_MESSAGES,
-					Intent.DIRECT_MESSAGES, Intent.GUILD_MEMBERS, Intent.GUILDS)).withGateway(gateway -> {
+			client.gateway()
+					.setEnabledIntents(IntentSet.of(Intent.DIRECT_MESSAGES, Intent.GUILD_MEMBERS, Intent.GUILDS))
+					.withGateway(gateway -> {
 						// Button handler
 						Mono<Void> ev = gateway.on(ButtonInteractionEvent.class, event -> {
 							return InteractionButtonHandler.handle(event, gateway);

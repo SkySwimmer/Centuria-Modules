@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ "$git" == "" ]; then
-	git="https://github.com/Cpeers1/Centuria.git --branch liev"
+	git="https://github.com/Cpeers1/Centuria.git --branch major-1.7"
 fi
 
 dir="$(pwd)"
@@ -25,7 +25,7 @@ function exitmeth() {
 function execute() {
     chmod +x gradlew
     mkdir deps
-    git clone https://github.com/SkySwimmer/connective-http deps/connective-http
+    git clone https://github.com/SkySwimmer/connective-http deps/connective-http --branch 1.0.0.A15
     ./gradlew installation || return $?
     if [ ! -d "$dir/server" ]; then
         mkdir "$dir/server"

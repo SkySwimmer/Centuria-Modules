@@ -1,5 +1,5 @@
 @echo off
-if not defined git set git="https://github.com/Cpeers1/Centuria.git --branch live"
+if not defined git set git="https://github.com/Cpeers1/Centuria.git --branch major-1.7"
 set dir=%cd%
 
 echo Updating standalone installation for testing...
@@ -17,7 +17,7 @@ goto execute
 
 :execute
 if NOT EXIST deps mkdir deps
-git clone https://github.com/SkySwimmer/connective-http deps/connective-http
+git clone https://github.com/SkySwimmer/connective-http deps/connective-http --branch 1.0.0.A15
 cmd /c java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain installation
 
 if NOT EXIST "%dir%\server" mkdir "%dir%\server"

@@ -40,7 +40,6 @@ import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
-import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
@@ -185,8 +184,9 @@ public class DiscordBotModule implements ICenturiaModule {
 					.addOption(CommandHandler.createApplicationPanel()).build();
 
 			// Connect
-			client.gateway().setEnabledIntents(IntentSet.of(Intent.GUILD_PRESENCES, Intent.GUILD_MESSAGES,
-					Intent.DIRECT_MESSAGES, Intent.GUILD_MEMBERS, Intent.GUILDS)).withGateway(gateway -> {
+			client.gateway()
+					.setEnabledIntents(IntentSet.of(Intent.DIRECT_MESSAGES, Intent.GUILD_MEMBERS, Intent.GUILDS))
+					.withGateway(gateway -> {
 						// Button handler
 						Mono<Void> ev = gateway.on(ButtonInteractionEvent.class, event -> {
 							return InteractionButtonHandler.handle(event, gateway);
